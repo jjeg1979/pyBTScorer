@@ -1,0 +1,57 @@
+Listado de rutas de carpetas
+El n�mero de serie del volumen es 2222-F352
+C:.
+�   .gitignore
+�   archivos.txt
+�   LICENSE
+�   README.md
+�   requirements.txt
+�   setup.py
+�   
+����src
+�   �   __init__.py
+�   �   
+�   ����parser
+�   �       bt.py
+�   �       btgenbox.py
+�   �       btmetrics.py
+�   �       btparser.py
+�   �       __init__.py
+�   �       
+�   ����payload
+�           au6_L_5_01_221231_set0.htm
+�           au6_L_5_01_221231_set0_IS.htm
+�           au6_L_5_01_221231_set0_OS.htm
+�           au6_L_5_01_221231_set1.htm
+�           au6_L_5_01_221231_set1_IS.htm
+�           au6_L_5_01_221231_set1_OS.htm
+�           au6_L_5_01_221231_set2.htm
+�           au6_L_5_01_221231_set2_IS.htm
+�           au6_L_5_01_221231_set2_OS.htm
+�           au6_L_5_01_221231_set3.htm
+�           au6_L_5_01_221231_set3_IS.htm
+�           au6_L_5_01_221231_set3_OS.htm
+�           au6_L_5_01_221231_set4.htm
+�           au6_L_5_01_221231_set4_IS.htm
+�           au6_L_5_01_221231_set4_OS.htm
+�           au6_L_5_01_221231_set5.htm
+�           au6_L_5_01_221231_set5_IS.htm
+�           au6_L_5_01_221231_set5_OS.htm
+�           au6_L_5_01_221231_set6.htm
+�           au6_L_5_01_221231_set6_IS.htm
+�           au6_L_5_01_221231_set6_OS.htm
+�           au6_L_5_01_221231_set7.htm
+�           au6_L_5_01_221231_set7_IS.htm
+�           au6_L_5_01_221231_set7_OS.htm
+�           
+����tests
+    �   conftest.py
+    �   
+    ����func
+    �       __init__.py
+    �       
+    ����unit
+    �   �   test_btgenbox.py
+    �   �   test_btparser.py
+    �   �   __init__.py
+

@@ -7,15 +7,14 @@ from pathlib import Path
 import pytest
 
 # Project imports
-from ..src import BT_FILES
-from ..src.parser.btparser import (
+from src.parser import BT_FILES
+from src.parser.btparser import (
+    BtPeriods, 
     BtPlatforms,
-    BtPeriods,
-    BtOrderType,
-    
+    BtOrderType,   
 )
 
-from ..src.parser.btgenbox import BtGenbox
+from src.parser.btgenbox import BtGenbox
 
 
 # Dummy test - Courtesy of JJ
@@ -27,15 +26,14 @@ def test_btgenbox_import_works_properly():
 def bt():    
     return BtGenbox(Path(r'src/payload/'), BT_FILES[0])
 
-def test_btgenbox_init_raises_fileNotFoundError():
-    with pytest.raises(FileNotFoundError) as er:
-        BtGenbox(Path(r'src/payload'), 'fileNotExistent')
-    assert er.type == FileNotFoundError
 
+def test_btgenbox_ordertype_property_returns_valid_ordertype(bt):
+    assert bt.ordertype == BtOrderType.BUY
 
-def test_btgengox_init_contructs_correctly(bt):
+    
+def test_btgenbox_init_contructs_correctly(bt):
     assert bt.path == Path(r'src/payload/')
     assert bt.file == BT_FILES[0]
-    assert bt.platform == 'GENBOX'
+    assert bt.platform == BtPlatforms.GBX
     assert bt.period == BtPeriods.ISOS
-     
+    

@@ -10,6 +10,7 @@ import pandas as pd
 from .btparser import (BtParser,
                        BtPlatforms, 
                        BtPeriods, 
+                       BtOrderType,
                        EXTENSION_SEP, 
                        GENBOX_FIELD_SEP,)
 # from .metrics import Metrics
@@ -64,7 +65,7 @@ class BtGenbox(BtParser):
 
         super().__init__(path, file)             
         self.operations = Path(self.path/self.file)
-        self.platform = self.bt_platform()
+        self.platform = self._bt_platform()
         self.period = self._bt_period()
         
     
@@ -77,21 +78,20 @@ class BtGenbox(BtParser):
 
 
     @property
-    def platform(self) -> str:
-        return self.platform_to_text(self._platform) if self._platform \
-            else self.platform_to_text(BtPlatforms.UKN)
+    def platform(self) -> BtPlatforms:
+        return self._platform if self._platform else BtPlatforms.UKN
     
     @platform.setter
-    def platform(self, value: BtPlatforms):
+    def platform(self, value: BtPlatforms):        
         self._platform = value if value in BtPlatforms else BtPlatforms.UKN
 
     @property
-    def period(self) -> str:
+    def period(self) -> BtPeriods:
         return self._period if self._period else BtPeriods.ISOS
     
     @period.setter
     def period(self, value: BtPeriods):
-        self._period = value if value in BtPeriods else self.period_to_text(BtPeriods.ISOS)
+        self._period = value if value in BtPeriods else BtPeriods.ISOS
 
     @property
     def operations(self) -> pd.DataFrame:
@@ -110,8 +110,9 @@ class BtGenbox(BtParser):
         return str(self.operations['Symbol'].unique())
     
     @property
-    def ordertype(self) -> str:
-        return str(self.operations['Order Type'].unique())
+    def ordertype(self) -> BtOrderType:        
+        value = str(self.operations['Type'].unique()[0].upper())
+        return self.from_text_to_ordertype(value)
     
     @property
     def timeframe(self) -> str:

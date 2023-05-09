@@ -1,7 +1,5 @@
-# Standard library imports
 """Tests the Abstract Base class BtParser"""
-
-import sys
+# Standard library imports
 from pathlib import Path
 from unittest.mock import patch
 
@@ -9,9 +7,7 @@ from unittest.mock import patch
 import pytest
 
 # Projec imports
-from ..src.parser.btparser import BtParser
-
-sys.path.append('..')
+from src.parser.btparser import BtParser
 
 
 # Following is a dummy test to check that the imports are working properly
@@ -26,7 +22,6 @@ def test_btparser_import_works_properly():
 def test_btparser_init():
     """Need to patch the base class, since it is absstract"""
     bt = BtParser(Path('/'), 'example.txt')
-    assert bt.path == Path('/')
-    
+    assert bt.path == Path('/')    
     assert bt.file == 'example.txt'
  
