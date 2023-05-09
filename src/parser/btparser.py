@@ -82,7 +82,7 @@ class BtParser(metaclass=abc.ABCMeta):
         * _bt_platform
     """
 
-    def __init__(self, path, file: str) -> None:
+    def __init__(self, path: Path, file: str) -> None:
         """
         Creates and returns a Btparser object
 
@@ -95,12 +95,12 @@ class BtParser(metaclass=abc.ABCMeta):
         Returns:        
             None.
         """
-        self._path = path or '.'
-        self._file = file
+        self._path = path or Path('.')
+        self._file = file or ''
 
     @property
-    def path(self):
-        return self._path if self._path is not None else '.'
+    def path(self) -> Path:
+        return self._path if self._path is not None else Path('.')
 
     # TODO: Error in case value is not path-like string or it doesn't exist
     @path.setter
