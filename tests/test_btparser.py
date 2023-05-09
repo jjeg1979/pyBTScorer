@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 # Non-standard library imports
+import pytest
 
 # Projec imports
 from ..src.parser.btparser import BtParser
@@ -20,7 +21,7 @@ def test_btparser_import_works_properly():
     assert True == True
     
 
-'''
+@pytest.mark.skip()
 @patch("..src.parser.btparser.BtParser.__abstractmethods__", set())
 def test_btparser_init():
     """Need to patch the base class, since it is absstract"""
@@ -28,4 +29,4 @@ def test_btparser_init():
     assert bt.path == Path('/')
     
     assert bt.file == 'example.txt'
-'''    
+ 
