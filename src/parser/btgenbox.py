@@ -1,4 +1,5 @@
 # Standard library imports
+import os
 from pathlib import Path
 
 # Non-standard library imports
@@ -61,10 +62,11 @@ class BtGenbox(BtParser):
         None
         """
 
-        super().__init__(path, file)
+        super().__init__(path, file)             
+        self.operations = Path(self.path/self.file)
         self.platform = self.bt_platform()
         self.period = self._bt_period()
-        self._ops = self.parse_html()
+        
     
     @property
     def name(self):
@@ -81,11 +83,11 @@ class BtGenbox(BtParser):
     
     @platform.setter
     def platform(self, value: BtPlatforms):
-        self._platform = value if value in BtPlatforms else self.platform_to_text(BtPlatforms.UKN) 
+        self._platform = value if value in BtPlatforms else BtPlatforms.UKN
 
     @property
     def period(self) -> str:
-        return self._period if self._period else self.period_to_text(BtPeriods.ISOS)
+        return self._period if self._period else BtPeriods.ISOS
     
     @period.setter
     def period(self, value: BtPeriods):
@@ -94,6 +96,14 @@ class BtGenbox(BtParser):
     @property
     def operations(self) -> pd.DataFrame:
         return self._ops
+    
+    @operations.setter
+    def operations(self, value) -> None:
+        """Reads the html file passed as argument and parses the operations"""
+        if os.path.exists(value):
+            self._ops = self.parse_html()
+        else:
+            raise FileNotFoundError
     
     @property
     def symbol(self) -> str:
@@ -124,7 +134,7 @@ class BtGenbox(BtParser):
             This information is used later to get the metrics
         """
 
-        raw_data = pd.read_html(self.path/Path(self.file))
+        raw_data = pd.read_html(Path(self.path/self.file))
         # Read operations
         ops = raw_data[0].iloc[2:, :]
 
