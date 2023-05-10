@@ -78,7 +78,7 @@ class BtParser(metaclass=abc.ABCMeta):
         * get_point_value
         * get_points
         * get_pips
-        * get_platform_to_text
+        * _platform_to_text
         * _bt_platform
     """
 
@@ -159,7 +159,7 @@ class BtParser(metaclass=abc.ABCMeta):
         factor = [multiple * point for multiple, point in zip(points, multiplier)]
         return (df['Close Price'] - df['Open Price']).values * factor
     
-    def platform_to_text(self, platform: BtPlatforms) -> str:
+    def from_platform_to_text(self, platform: BtPlatforms) -> str:
         """
         Takes a value from the BtPlatform Enumeration and returns a
         string representation for the platform (more human readable)
@@ -186,7 +186,7 @@ class BtParser(metaclass=abc.ABCMeta):
                 # TODO - Custom Exception for this type
                 return ValueError
             
-    def period_to_text(self, period: BtPeriods) -> str:
+    def from_period_to_text(self, period: BtPeriods) -> str:
         """
         Takes a value from the BtPeriods Enumeration and returns a
         string representation for the backtest period (more human readable)
@@ -209,9 +209,9 @@ class BtParser(metaclass=abc.ABCMeta):
                 # TODO - Custom Exception for this type
                 return ValueError
     
-    def ordertype_to_text(self, order_type: BtOrderType) -> str:
+    def from_ordertype_to_text(self, order_type: BtOrderType) -> str:
         """
-        Takes a value from the BtOrderTYpe Enumeration and returns a
+        Takes a value from the BtOrderType Enumeration and returns a
         string representation for the backtest order type (more human readable)
 
         Args:
@@ -219,6 +219,9 @@ class BtParser(metaclass=abc.ABCMeta):
 
         Returns:
             (str): A human readable representation of the backtest order type
+            
+        Raises:
+            ValueError if the type does not belong to BtOrderType Enum
         """
 
         match order_type:
@@ -231,9 +234,39 @@ class BtParser(metaclass=abc.ABCMeta):
             case _:
                 # TODO - Custom Exception for this type
                 return ValueError
+            
+    def from_text_to_ordertype(self, order_type: str) -> BtOrderType:
+        """
+        Takes a string value with the for the backtest order type and returns
+        a value from the enumeration BtOrderType
+
+        Args:
+            order_type (str): String which can take up one of the following values:
+                - 'BUY'
+                - 'SELL'
+                - 'BUY&SELL'
+
+        Returns:
+            (BtOrderType): A BtOrderType enumeration value
+            
+        Raises:
+            ValueError: If order_type cannot be translated into one of the 
+                        BtOrderType Enum values
+        """
+        
+        match order_type:
+            case 'BUY':
+                return BtOrderType.BUY
+            case 'SELL':
+                return BtOrderType.SELL
+            case 'BUY&SELL':
+                return BtOrderType.BOTH
+            case _:
+                return ValueError
+            
 
             
-    def bt_platform(self) -> BtPlatforms:
+    def _bt_platform(self) -> BtPlatforms:
         """
         Classifies backtest according the platform
 
