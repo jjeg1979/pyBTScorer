@@ -1,6 +1,7 @@
 # Standard library imports
 from collections import Counter
 import datetime as dt
+from datetime import timedelta
 from typing import Tuple, Any, Set, List
 from decimal import Decimal
 
@@ -10,6 +11,7 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 # Project imports
+from .btgenbox import BtGenbox
 
 ################################################################
 # CONSTANTS AND ENUMERATIONS USED BY THIS CLASS
@@ -41,9 +43,11 @@ ALL_METRICS = {
     'Gross Loss',
     'Kratio',
 }
+# Precision to present the metrics (decimal places)
+DEC_PREC = '0.00'
 ################################################################
 
-class Btmetrics:
+class BtMetrics:
     """
     Represents a Btmetrics object. From a backtest, it calculates different metrics to characterize the
     backtest and to ensure that the
@@ -87,7 +91,7 @@ class Btmetrics:
         * kratio
     """
 
-    def __init__(self, ops: pd.DataFrame) -> None:
+    def __init__(self, bt: BtGenbox) -> None:
         """Creates and returns a Metrics object
 
         Args:
@@ -99,10 +103,10 @@ class Btmetrics:
 
         TODO:   Include pips_mode as argument for the constructor in order
                 to homogenize the call to the metrics functions
-        """
-        self._ops = ops
+        """        
+        self._ops = bt.operations
         self._available_metrics = self.available_metrics
-        self._all_metrics = self.calculate_metrics()
+        # self._all_metrics = self.calculate_metrics()
 
     
     @property
@@ -119,10 +123,7 @@ class Btmetrics:
             Returns:
                 (pandas.DataFrame): DataFrame with the operations
         """
-        if self._ops is None:
-            raise ValueError
-        else:
-            return self._ops
+        return self._ops 
     
     @operations.setter
     def operations(self, value: pd.DataFrame) -> None:
@@ -130,7 +131,9 @@ class Btmetrics:
 
     @property
     def all_metrics(self) -> dict:
-        return self._calculate_metrics()   
+        """ Property that returns a dict with the names of all the metrics and
+            the corresponding values calculated."""
+        return {}
     
     @property
     def available_metrics(self) -> Set[str]:
@@ -138,16 +141,22 @@ class Btmetrics:
         in this class that calculates the metrics.
 
         Returns:
-            (dict): Dictionary with the following structure:
-                    {'metric_name': metric_function_name }
+            (Set): Set with the following structure:
+                    {'metric_name1', 
+                     'metric_name2',
+                     ...                     
+                     }
                     For example:
-                        {'PF': self.calculate_pf}
+                        {'PF',
+                         'EP',
+                         ...
+                        }
         """
         # return {
         #     'PF'                  : self.calculate_pf,                  # Profit Factor
         #     'EP'                  : self.esp,                           # Expectancy
         #     'DD'                  : self.drawdown,                      # Drawdown
-        #     'Stagnation Period'   : self.stagnation_period,             
+        #     'Stagnation Period'   : self.stagnation_periods,             
         #     'DD2'                 : self.dd2,                           
         #     'Max. Exposure'       : self.exposures,                                             
         #     'Max. Losing Strike'  : self.get_max_losing_strike,         
@@ -171,7 +180,7 @@ class Btmetrics:
         #     'Gross Loss'          : self.gross_loss,
         #     'Kratio'              : self.kratio,
         # }
-        return {key for key in self.all_metrics.keys()}
+        return ALL_METRICS
     
     def _calculate_metrics(self, pips_mode=True) -> dict:
         """Method that returns a dict with the values for the matrics included in this class
@@ -193,7 +202,7 @@ class Btmetrics:
             'PF'                  : self.calculate_pf(pips_mode),                  
             'EP'                  : self.esp(pips_mode),                           
             'DD'                  : self.drawdown(pips_mode),                      
-            'Stagnation Period'   : self.stagnation_period(pips_mode),             
+            'Stagnation Period'   : self.stagnation_periods(pips_mode),             
             'DD2'                 : self.dd2(pips_mode),                           
             'Max. Exposure'       : max(self.exposures()),
             'Max. Losing Strike'  : self.get_max_losing_strike(strikes),         
@@ -241,6 +250,10 @@ class Btmetrics:
         return {metric:self.all_metrics[metric] for metric in selected_metrics}
 
     def is_valid(self, criteria: dict) -> bool:
+        """ Based on certain thresholds for some criteria determine if a 
+            backtest is valid.
+            
+        """
         pass
 
 
@@ -248,7 +261,8 @@ class Btmetrics:
         """Calculates the Profit Factor for the backtest operations
 
         Args:
-            pips_mode (bool): Indicates whether the results must be in Pips or in monetary terms
+            pips_mode (bool):   Indicates whether the results must be in Pips or 
+                                in monetary terms
 
         Returns:
             (Decimal): Value for the Profit Factor
@@ -256,7 +270,8 @@ class Btmetrics:
         column = 'Pips' if pips_mode else 'Profit'
         profit = self.operations[self.operations[column] > 0][column].sum()
         loss = -self.operations[self.operations[column] < 0][column].sum()
-        return profit / loss if loss > 0 else np.inf()
+        pf = Decimal(profit / loss) if loss > 0 else Decimal('inf')
+        return pf.quantize(Decimal('0.00'))
 
 
     def drawdown(self, pips_mode=True) -> pd.Series:
@@ -266,24 +281,28 @@ class Btmetrics:
             pips_mode (bool): Indicates whether the results must be in Pips or in monetary terms
 
         Returns:
-            np.array: Numpy array with the drawdown values
-        """
-        self.operations = self.operations
+            pd.Series: Pandas series with the drawdown values
+        """        
         column = 'Pips' if pips_mode else 'Profit'
-        return self.operations[column].cumsum() - self.operations[column].cumsum().cummax()
+        return self.operations[column].cumsum() - \
+            self.operations[column].cumsum().cummax()
 
 
-    def stagnation_period(self, mode_pips=True) -> List[float]:  
+    def stagnation_periods(self, pips_mode=True) -> List[timedelta]:  
         """Calculates the periods where the balance curve is not increasing 
 
         Args:
-            pips_mode (bool): Indicates whether the results must be in Pips or in monetary terms
+            pips_mode (bool):   Indicates whether the results must be in Pips
+                                or in monetary terms
 
         Returns:
-            (list): List with the stagnation durations
-        """      
-        dd = self.drawdown(mode_pips).to_list()
-        stagnation = [self.operations['Close Time'].iloc[dd.index(d)] for d in dd if d != 0]
+            List[timedelta]: List with the stagnation durations
+        """
+        # TODO: Add a parameter to select the drawdown function
+        # TODO: Check why pips_mode changes the result (stagnation should be the same)
+        dd = self.drawdown(pips_mode).to_list()
+        stagnation = [self.operations['Close Time'].iloc[dd.index(d)] for \
+                        d in dd if d != 0]
 
         durations = pd.Series(stagnation).diff().to_list()
 
@@ -291,31 +310,31 @@ class Btmetrics:
         return durations[1:]
 
 
-    def dd2(self, pips_mode=True) -> np.array:
+    def dd2(self, pips_mode=True) -> pd.Series:
         """Calculates the Drawdown in a different way from the self.drawdown method of this class
 
         Args:
             pips_mode (bool): Indicates whether the results must be in Pips or in monetary terms
 
         Returns:
-            np.array: Numpy array with the drawdown values
+            pd.Series: Numpy array with the drawdown values
 
         TODO: - Return value should be pd.Series, to be consisten with self.drawdown method
         """
-        self.operations = self.operations['Pips'] if pips_mode is True else self.operations['Profit']
+        operations = self.operations['Pips'] if pips_mode is True else self.operations['Profit']
         d, dd_actual = [], 0
 
-        for p in self.operations:
+        for p in operations:
             dd_actual -= p
             if p < 0:
                 dd_actual = 0
             d.append(dd_actual)
-
-        return np.array(d)
+        
+        return pd.Series(d)
 
 
     def esp(self, pips_mode=True) -> Decimal:
-        """Calculates the Mathematica Expectancy for the backtest operations
+        """Calculates the Expectancy in either pips or money for the backtest operations
 
         Args:
             pips_mode (bool): Indicates whether the results must be in Pips or in monetary terms
@@ -324,18 +343,24 @@ class Btmetrics:
             (Decimal): Value for the Expectancy
         """
         esp = self.operations['Pips'].mean() if pips_mode is True else self.operations['Profit'].mean()
-        return Decimal(esp)
+        return Decimal(esp).quantize(Decimal(DEC_PREC))
 
 
-    def exposures(self) -> list:
+    def exposures(self) -> Tuple[List[int], List[float]]:
+        """
+        This method calcualtes the maximum exposure in ops and in volume
+        """
         exp = []
-        for _, op in self.operations.iterrows():
+        vols = []
+        operations = self.operations
+        for _, op in operations.iterrows():
             open_time = op['Open Time']
             close_time = op['Close Time']
-            ops = self.operations[(self.operations['Open Time'] >= open_time) & \
-                                  (self.operations['Close Time'] <= close_time)]
+            ops = operations[(operations['Open Time'] >= open_time) & \
+                                  (operations['Close Time'] <= close_time)]
             exp.append(ops.shape[0])
-        return exp
+            vols.append(ops['Volume'].sum())
+        return exp, vols
 
 
     def _get_strikes(self, pips_mode=True) -> dict:

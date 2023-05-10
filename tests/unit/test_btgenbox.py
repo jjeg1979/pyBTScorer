@@ -1,4 +1,4 @@
-"""Tests the concretate implementarion of BtParser for Genbox-type Backtests"""
+"""Tests the concreate implementarion of BtParser for Genbox-type Backtests"""
 
 # Standard library imports
 from pathlib import Path
@@ -35,34 +35,35 @@ def test_btgenbox_import_works_properly():
 def bt():    
     return BtGenbox(Path(r'src/payload/'), BT_FILES[0])
 
+
 class TestBtGenboxProperties:
     """Test expected values returned from accesing BtGenbox Properties."""
     
     def test_btgenbox_ordertype_returns_valid_type(self, bt):
         """ordertype properties should return a BtOrderType type."""
-        assert isinstance(bt.ordertype, BtOrderType)        
+        assert isinstance(bt.ordertype, BtOrderType)
         
     def test_btgenbox_ordertype(self, bt):
         """ordertype properties should return a member of the BtOrderType Enum."""
-        assert bt.ordertype == BtOrderType.BUY        
+        assert bt.ordertype == BtOrderType.BUY
     
     def test_btgenbox_name_returns_valid_type(self, bt):
         """name property should return a string type."""
-        assert isinstance(bt.name, string_types)            
+        assert isinstance(bt.name, string_types)
     
     def test_btgenbox_name(self, bt):
         """name property should return a valid name for the backtest."""
         expected = BT_FILES[0].split(EXTENSION_SEP[0])[0]
-        assert bt.name == expected        
+        assert bt.name == expected
         
     def test_btgenbox_platform_returns_valid_type(self, bt):
         """platform property should return a member of the BtPlatform Enu."""
-        assert isinstance(bt.platform, BtPlatforms)        
+        assert isinstance(bt.platform, BtPlatforms)
         
     def test_btgenbox_platform(self, bt):
         """platform property should return a valid platform enum member."""
         expected = BtPlatforms.GBX
-        assert bt.platform == expected        
+        assert bt.platform == expected
         
     def test_btgenbox_operations_returns_valid_type(self, bt):
         """operations property should return a DataFrame type."""
