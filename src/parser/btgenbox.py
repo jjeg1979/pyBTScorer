@@ -16,6 +16,19 @@ from .btparser import (BtParser,
 # from .metrics import Metrics
 
 
+##########################################################################################################
+# CONSTANTS AND ENUMERATIONS USED BY THIS CLASS
+# Column names for operations dataframe
+OPS_INITIAL_COLUMN_NAMES = ['Open Time', 'Type', 'Volume', 'Symbol', 'Open Price',
+                        'S/L', 'T/P', 'Close Time', 'Close Price', 'Commission', 'Taxes',
+                        'Swap', 'Profit']
+OPS_DROP_COLUMN_NAMES = ['Commission', 'Taxes', 'Swap']
+OPS_FINAL_COLUMN_NAMES = ['Open Time', 'Close Time', 'S/L', 'T/P', 'Duration',
+                        'Type', 'Volume', 'Symbol', 'Open Price', 'Close Price',
+                        'Pips', 'Profit', 'Balance']
+##########################################################################################################
+
+
 class BtGenbox(BtParser):
     """
     Represents a Genbox Backtest object
@@ -70,12 +83,15 @@ class BtGenbox(BtParser):
         
     
     @property
-    def name(self):
-        if self.period == 'ISOS':
-            self._name = self.file.split(EXTENSION_SEP)[0]
+    def name(self) -> str:
+        """Read-only property that returns the name of the backtest
+           The name of the backtest is the same for 3 backtests (IS, OS, and ISOS)
+           since it should be the same parametrization over different periods of time
+        """
+        if self.period == BtPeriods.ISOS:
+            return self.file.split(EXTENSION_SEP)[0]
         else:
-            self._name = '_'.join(self.file.split(EXTENSION_SEP)[0].split(GENBOX_FIELD_SEP)[:-1])
-
+            return '_'.join(self.file.split(EXTENSION_SEP)[0].split(GENBOX_FIELD_SEP)[:-1])
 
     @property
     def platform(self) -> BtPlatforms:
@@ -106,8 +122,10 @@ class BtGenbox(BtParser):
             raise FileNotFoundError
     
     @property
+    # TODO - for next version, try to check symbol really exists
+    #        i.e. it is valid
     def symbol(self) -> str:
-        return str(self.operations['Symbol'].unique())
+        return str(self.operations['Symbol'].unique()[0]).upper()
     
     @property
     def ordertype(self) -> BtOrderType:        
@@ -180,27 +198,21 @@ class BtGenbox(BtParser):
         for col in num_col:
             ops[ops.columns[col]] = ops[ops.columns[col]].astype(float)
 
-        # Nombre de las columnas
-        columnas = ['Open Time', 'Type', 'Volume', 'Symbol', 'Open Price',
-                    'S/L', 'T/P', 'Close Time', 'Close Price', 'Commission', 'Taxes',
-                    'Swap', 'Profit']
-        ops.columns = columnas
+        # Nombre inicial de las columnas        
+        ops.columns = OPS_INITIAL_COLUMN_NAMES
 
         ops['Duration'] = ops['Close Time'] - ops['Open Time']
         ops['Balance'] = deposit + ops['Profit'].cumsum()
 
-        # Quitamos las columnas de swap, comision e impuestos
-        drop_columns = ['Commission', 'Taxes', 'Swap']
-        ops.drop(drop_columns, axis=1, inplace=True)
+        # Quitamos las columnas que sobran        
+        ops.drop(OPS_DROP_COLUMN_NAMES, axis=1, inplace=True)
 
         # Reordenamos las columnas del dataframe para que tanto los de GBX como los de MT4
         # tengan el mismo orden de columnas
-        columnas = ['Open Time', 'Close Time', 'S/L', 'T/P', 'Duration',
-                    'Type', 'Volume', 'Symbol', 'Open Price', 'Close Price',
-                    'Pips', 'Profit', 'Balance']
+        
         # Pips must be split in two different lines if we want to avoid to have all Pips NaN
         ops['Pips'] = self.get_pips(ops)
-        ops = ops[columnas]
+        ops = ops[OPS_FINAL_COLUMN_NAMES]
 
         # Reasignar número de ticker
         ops.reset_index(inplace=True, drop=True)

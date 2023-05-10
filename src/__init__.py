@@ -4,3 +4,5 @@ from .parser import (
     btmetrics,
     BT_FILES,
 )
+
+__version__ = '0.1.0'

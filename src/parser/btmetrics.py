@@ -11,6 +11,38 @@ from sklearn.linear_model import LinearRegression
 
 # Project imports
 
+################################################################
+# CONSTANTS AND ENUMERATIONS USED BY THIS CLASS
+# Set with all available metrics
+ALL_METRICS = {
+    'PF',
+    'EP',
+    'DD',
+    'Stagnation Period',
+    'DD2',
+    'Max. Exposure',
+    'Max. Losing Strike',
+    'Max. Winning Strike',
+    'Avg. Losing Strike',
+    'Avg. Winning Strike',
+    'Max. Lots',
+    'Min. Lots',
+    'Pct. Win',
+    'Pct. Loss',
+    'Closing Days',
+    'SQN',
+    'Sharpe',
+    'Best Op',
+    'Worst Op',
+    'Avg Win:',
+    'Avg Loss',
+    'Backtest Time',
+    'Gross Profit',
+    'Gross Loss',
+    'Kratio',
+}
+################################################################
+
 class Btmetrics:
     """
     Represents a Btmetrics object. From a backtest, it calculates different metrics to characterize the

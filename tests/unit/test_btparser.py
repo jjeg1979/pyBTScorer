@@ -17,7 +17,7 @@ def test_btparser_import_works_properly():
     assert True == True
     
 
-@pytest.mark.skip()
+@pytest.mark.skip(reason='Need to dig fix relative import with @patch decorator')
 @patch("..src.parser.btparser.BtParser.__abstractmethods__", set())
 def test_btparser_init():
     """Need to patch the base class, since it is absstract"""
