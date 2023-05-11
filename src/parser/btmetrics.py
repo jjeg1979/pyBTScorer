@@ -45,6 +45,8 @@ ALL_METRICS = {
 }
 # Precision to present the metrics (decimal places)
 DEC_PREC = '0.00'
+
+
 ################################################################
 
 class BtMetrics:
@@ -68,7 +70,7 @@ class BtMetrics:
         * dd2
         * esp
         * exposures
-        * get_strikes
+        * _get_strikes
         * get_max_losing_strike
         * get_max_winning_strike
         * get_avg_losing_strike
@@ -88,27 +90,31 @@ class BtMetrics:
         * calculate_total_time
         * gross_profit
         * gross_loss
-        * kratio
+        * calculate_kratio
     """
 
-    def __init__(self, bt: BtGenbox) -> None:
+    def __init__(self, bt: BtGenbox, calc_metrics_at_init: bool = False, pips_mode: bool = True) -> None:
         """Creates and returns a Metrics object
 
         Args:
-            ops (pandas.DataFrame): Operations extracted from backtest 
-                                    in a Pandas DataFrame      
+            bt   (BtGenbox):                Genbox Backtest Object
+            calc_metrics_at_init (bool):    Calculate metrics at init or not
+            pips_mode:                      Metrics calculation mode:
+                                                True:   in pips terms
+                                                False:  in monetary terms
         
         Returns:
             None
 
         TODO:   Include pips_mode as argument for the constructor in order
                 to homogenize the call to the metrics functions
-        """        
+        """
         self._ops = bt.operations
         self._available_metrics = self.available_metrics
-        # self._all_metrics = self.calculate_metrics()
+        self.calc_metrics_at_init = calc_metrics_at_init
+        self._pips_or_money = pips_mode
+        self._all_metrics = self._calculate_metrics(self.pips_or_money) if calc_metrics_at_init else None
 
-    
     @property
     def operations(self) -> pd.DataFrame:
         """Operations in the backtest. The data available for the operations are:
@@ -123,18 +129,26 @@ class BtMetrics:
             Returns:
                 (pandas.DataFrame): DataFrame with the operations
         """
-        return self._ops 
-    
+        return self._ops
+
     @operations.setter
     def operations(self, value: pd.DataFrame) -> None:
-        self._ops = value if value is pd.DataFrame else None    
+        self._ops = value if value is pd.DataFrame else None
+
+    @property
+    def pips_or_money(self) -> bool:
+        return self._pips_or_money
+
+    @pips_or_money.setter
+    def pips_or_money(self, value: bool) -> None:
+        self._pips_or_money = value
 
     @property
     def all_metrics(self) -> dict:
         """ Property that returns a dict with the names of all the metrics and
             the corresponding values calculated."""
-        return {}
-    
+        return self._all_metrics if self._all_metrics is not None else self._calculate_metrics(self.pips_or_money)
+
     @property
     def available_metrics(self) -> Set[str]:
         """Property that returns a dict with the names of the metrics and the corresponding function
@@ -178,10 +192,10 @@ class BtMetrics:
         #     'Backtest Time'       : self.calculate_total_time,             # Total time for the bactest
         #     'Gross Profit'        : self.gross_profit,
         #     'Gross Loss'          : self.gross_loss,
-        #     'Kratio'              : self.kratio,
+        #     'Kratio'              : self.calculate_kratio,
         # }
         return ALL_METRICS
-    
+
     def _calculate_metrics(self, pips_mode=True) -> dict:
         """Method that returns a dict with the values for the matrics included in this class
 
@@ -199,32 +213,32 @@ class BtMetrics:
         """
         strikes = self._get_strikes(pips_mode)
         return {
-            'PF'                  : self.calculate_pf(pips_mode),                  
-            'EP'                  : self.esp(pips_mode),                           
-            'DD'                  : self.drawdown(pips_mode),                      
-            'Stagnation Period'   : self.stagnation_periods(pips_mode),             
-            'DD2'                 : self.dd2(pips_mode),                           
-            'Max. Exposure'       : max(self.exposures()),
-            'Max. Losing Strike'  : self.get_max_losing_strike(strikes),         
-            'Max. Winning Strike' : self.get_max_winning_strike(strikes),
-            'Avg. Losing Strike'  : self.get_avg_losing_strike(strikes),
-            'Avg. Winning Strike' : self.get_avg_winning_strike(strikes),
-            'Max. Lots'           : self.get_max_lots(),
-            'Min. Lots'           : self.get_min_lots(),
-            'Time in Market'      : self.calculate_time_in_market(),
-            'Pct. Win'            : self.pct_win(pips_mode),
-            'Pct. Loss'           : self.pct_loss(pips_mode),
-            'Closing Days'        : self.calculate_closing_days(),
-            'SQN'                 : self.calculate_sqn(pips_mode),
-            'Sharpe'              : self.calculate_sharpe(pips_mode),
-            'Best Op'             : self.best_operation(pips_mode),
-            'Worst Op'            : self.worst_operation(pips_mode),
-            'Avg Win:'            : self.calculate_avg_win(pips_mode),
-            'Avg Loss'            : self.calculate_avg_loss(pips_mode),
-            'Backtest Time'       : self.calculate_total_time(),             
-            'Gross Profit'        : self.gross_profit(pips_mode),
-            'Gross Loss'          : self.gross_loss(pips_mode),
-            'Kratio'              : self.kratio(pips_mode),
+            'PF': self.calculate_pf(pips_mode),
+            'EP': self.esp(pips_mode),
+            'DD': self.drawdown(pips_mode),
+            'Stagnation Period': self.stagnation_periods(pips_mode),
+            'DD2': self.dd2(pips_mode),
+            'Max. Exposure': max(self.exposures()),
+            'Max. Losing Strike': self.get_max_losing_strike(),
+            'Max. Winning Strike': self.get_max_winning_strike(),
+            'Avg. Losing Strike': self.get_avg_losing_strike(),
+            'Avg. Winning Strike': self.get_avg_winning_strike(),
+            'Max. Lots': self.get_max_lots(),
+            'Min. Lots': self.get_min_lots(),
+            'Time in Market': self.calculate_time_in_market(),
+            'Pct. Win': self.pct_win(pips_mode),
+            'Pct. Loss': self.pct_loss(pips_mode),
+            'Closing Days': self.calculate_closing_days(),
+            'SQN': self.calculate_sqn(pips_mode),
+            'Sharpe': self.calculate_sharpe(pips_mode),
+            'Best Op': self.best_operation(pips_mode),
+            'Worst Op': self.worst_operation(pips_mode),
+            'Avg Win:': self.calculate_avg_win(pips_mode),
+            'Avg Loss': self.calculate_avg_loss(pips_mode),
+            'Backtest Time': self.calculate_total_time(),
+            'Gross Profit': self.gross_profit(pips_mode),
+            'Gross Loss': self.gross_loss(pips_mode),
+            'Kratio': self.calculate_kratio(pips_mode),
         }
 
     def selected_metrics(self, selected_metrics: List[str]) -> dict:
@@ -244,10 +258,10 @@ class BtMetrics:
                         }
         """
         # First check if we want to retrieve all the metrics
-        if len(selected_metrics) == len(self.avilable_metrics):
+        if len(selected_metrics) == len(self.available_metrics):
             return self.all_metrics
-        
-        return {metric:self.all_metrics[metric] for metric in selected_metrics}
+
+        return {metric: self.all_metrics[metric] for metric in selected_metrics}
 
     def is_valid(self, criteria: dict) -> bool:
         """ Based on certain thresholds for some criteria determine if a 
@@ -255,7 +269,6 @@ class BtMetrics:
             
         """
         pass
-
 
     def calculate_pf(self, pips_mode=True) -> Decimal:
         """Calculates the Profit Factor for the backtest operations
@@ -273,7 +286,6 @@ class BtMetrics:
         pf = Decimal(profit / loss) if loss > 0 else Decimal('inf')
         return pf.quantize(Decimal('0.00'))
 
-
     def drawdown(self, pips_mode=True) -> pd.Series:
         """Calculates the Drawdown 
 
@@ -282,13 +294,12 @@ class BtMetrics:
 
         Returns:
             pd.Series: Pandas series with the drawdown values
-        """        
+        """
         column = 'Pips' if pips_mode else 'Profit'
         return self.operations[column].cumsum() - \
-            self.operations[column].cumsum().cummax()
+               self.operations[column].cumsum().cummax()
 
-
-    def stagnation_periods(self, pips_mode=True) -> List[timedelta]:  
+    def stagnation_periods(self, pips_mode=True) -> List[timedelta]:
         """Calculates the periods where the balance curve is not increasing 
 
         Args:
@@ -302,13 +313,12 @@ class BtMetrics:
         # TODO: Check why pips_mode changes the result (stagnation should be the same)
         dd = self.drawdown(pips_mode).to_list()
         stagnation = [self.operations['Close Time'].iloc[dd.index(d)] for \
-                        d in dd if d != 0]
+                      d in dd if d != 0]
 
         durations = pd.Series(stagnation).diff().to_list()
 
         # Need to remove first value (NaT)
         return durations[1:]
-
 
     def dd2(self, pips_mode=True) -> pd.Series:
         """Calculates the Drawdown in a different way from the self.drawdown method of this class
@@ -329,9 +339,8 @@ class BtMetrics:
             if p < 0:
                 dd_actual = 0
             d.append(dd_actual)
-        
-        return pd.Series(d)
 
+        return pd.Series(d)
 
     def esp(self, pips_mode=True) -> Decimal:
         """Calculates the Expectancy in either pips or money for the backtest operations
@@ -345,7 +354,6 @@ class BtMetrics:
         esp = self.operations['Pips'].mean() if pips_mode is True else self.operations['Profit'].mean()
         return Decimal(esp).quantize(Decimal(DEC_PREC))
 
-
     def exposures(self) -> Tuple[List[int], List[float]]:
         """
         This method calcualtes the maximum exposure in ops and in volume
@@ -357,18 +365,17 @@ class BtMetrics:
             open_time = op['Open Time']
             close_time = op['Close Time']
             ops = operations[(operations['Open Time'] >= open_time) & \
-                                  (operations['Close Time'] <= close_time)]
+                             (operations['Close Time'] <= close_time)]
             exp.append(ops.shape[0])
             vols.append(ops['Volume'].sum())
         return exp, vols
-
 
     def _get_strikes(self, pips_mode=True) -> dict:
         """
         This method returns a Counter object where the positive and negative
         strikes are shown.
         """
-        
+
         column = 'Pips' if pips_mode else 'Profit'
         self.operations['Strike Type'] = np.where(self.operations[column] > 0, 1, -1)
         strikes = {1: [], -1: []}
@@ -386,34 +393,35 @@ class BtMetrics:
                 counter = 1
         return {1: Counter(strikes[1]), -1: Counter(strikes[-1])}
 
-
-    def get_max_losing_strike(self, strikes: dict) -> int:
+    def get_max_losing_strike(self, pips_mode: bool = True) -> int:
+        strikes = self._get_strikes(pips_mode)
         return max(strikes[-1].keys())
 
-
-    def get_max_winning_strike(self, strikes: dict) -> int:
+    def get_max_winning_strike(self, pips_mode: bool = True) -> int:
+        strikes = self._get_strikes(pips_mode)
         return max(strikes[1].keys())
 
-
-    def get_avg_losing_strike(self, strikes: dict) -> float:
+    def get_avg_losing_strike(self, pips_mode: bool = True) -> Decimal:
+        strikes = self._get_strikes(pips_mode)
         pairs = zip(strikes[-1].keys(), strikes[1].values())
         average = sum(pair[0] * pair[1] for pair in pairs)
-        return average / sum(strikes[-1].values())
+        avg_losing_strike = average / sum(strikes[-1].values())
+        return Decimal(avg_losing_strike).quantize(Decimal(DEC_PREC))
 
-
-    def get_avg_winning_strike(self, strikes: dict) -> float:
+    def get_avg_winning_strike(self, pips_mode: bool = True) -> Decimal:
+        strikes = self._get_strikes(pips_mode)
         pairs = zip(strikes[1].keys(), strikes[1].values())
         average = sum(pair[0] * pair[1] for pair in pairs)
-        return average / sum(strikes[1].values())
-    
+        avg_winning_strike = average / sum(strikes[1].values())
+        return Decimal(avg_winning_strike).quantize(Decimal(DEC_PREC))
 
-    def get_max_lots(self) -> float:
-        return max(self.operations['Volume'])
+    def get_max_lots(self) -> Decimal:
+        max_lots = max(self.operations['Volume'])
+        return Decimal(max_lots).quantize(Decimal(DEC_PREC))
 
-
-    def get_min_lots(self) -> float:
-        return min(self.operations['Volume'])
-
+    def get_min_lots(self) -> Decimal:
+        min_lots = min(self.operations['Volume'])
+        return Decimal(min_lots).quantize(Decimal(DEC_PREC))
 
     def _remove_overlapping_ops(self) -> pd.DataFrame:
         """
@@ -436,37 +444,35 @@ class BtMetrics:
 
         return self.operations.iloc[list(indices)]
 
-
-    def calculate_time_in_market(self) -> Tuple[Any, Any, Any, Any]:      
-        self.operations_clean = self.operations
+    def calculate_time_in_market(self) -> Tuple[int, int, int, int]:
+        operations_clean = self.operations
         # indices = set(self.operations_clean.reset_index(drop=True).index)
-        total_time = self.operations_clean.iloc[0]['Duration']
-        for idx in range(1,self.operations_clean.shape[0]):
-            if self.operations_clean['Open Time'].iloc[idx] < self.operations_clean['Close Time'].iloc[idx-1]:
-                added_time = self.operations_clean['Close Time'].iloc[idx] - self.operations_clean['Close Time'].iloc[idx-1]
+        total_time = operations_clean.iloc[0]['Duration']
+        for idx in range(1, operations_clean.shape[0]):
+            if operations_clean['Open Time'].iloc[idx] < operations_clean['Close Time'].iloc[idx - 1]:
+                added_time = operations_clean['Close Time'].iloc[idx] - operations_clean['Close Time'].iloc[idx - 1]
                 total_time += added_time
             else:
-                total_time += self.operations_clean['Duration'].iloc[idx]
+                total_time += operations_clean['Duration'].iloc[idx]
 
         days = total_time.days
         hours = (total_time - dt.timedelta(days=days)).seconds // 3600
-        minutes = (total_time - dt.timedelta(days=days, hours=hours)).seconds//60
-        seconds = (total_time-dt.timedelta(days=days, hours=hours, minutes=minutes)).seconds
+        minutes = (total_time - dt.timedelta(days=days, hours=hours)).seconds // 60
+        seconds = (total_time - dt.timedelta(days=days, hours=hours, minutes=minutes)).seconds
 
         return days, hours, minutes, seconds
 
-
-    def pct_win(self, pips_mode=True) -> float:
+    def pct_win(self, pips_mode=True) -> Decimal:
         """
         pips_mode: 
         """
         column = 'Pips' if pips_mode else 'Profit'
-        return self.operations[self.operations[column] > 0].shape[0] / self.operations.shape[0] * 100
-    
+        pct_win = self.operations[self.operations[column] > 0].shape[0] / self.operations.shape[0] * 100
+        return Decimal(pct_win).quantize(Decimal(DEC_PREC))
 
-    def pct_loss(self, pips_mode=True) -> float:
-        return 100 - self.pct_winner(self.operations, pips_mode)
-
+    def pct_loss(self, pips_mode=True) -> Decimal:
+        pct_loss = 100 - self.pct_win(pips_mode)
+        return Decimal(pct_loss).quantize(Decimal(DEC_PREC))
 
     def calculate_closing_days(self) -> int:
         """
@@ -479,68 +485,67 @@ class BtMetrics:
         dates = set(dates)
         return len(dates)
 
-
-    def calculate_sqn(self, pips_mode=True) -> float:
+    def calculate_sqn(self, pips_mode=True) -> Decimal:
         if pips_mode:
-            return self.operations['Pips'].mean()/(self.operations['Pips'].std()/(self.operations.shape[0] ** 0.5))
+            sqn = self.operations['Pips'].mean() / (self.operations['Pips'].std() / (self.operations.shape[0] ** 0.5))
         else:
-            return self.operations['Profit'].mean()/(self.operations['Profit'].std()/(self.operations.shape[0] ** 0.5))
+            sqn = self.operations['Profit'].mean() / (
+                    self.operations['Profit'].std() / (self.operations.shape[0] ** 0.5))
+        return Decimal(sqn).quantize(Decimal(DEC_PREC))
 
+    def calculate_sharpe(self, pips_mode=True) -> Decimal:
+        sr = self.calculate_sqn(pips_mode) * Decimal((self.operations.shape[0] ** 0.5))
+        return sr.quantize(Decimal(DEC_PREC))
 
-    def calculate_sharpe(self, pips_mode=True) -> float:
-        return self.calculate_sqn(self.operations, pips_mode) * (self.operations.shape[0] ** 0.5)
-
-
-    def best_operation(self, pips_mode=True) -> tuple[Any, Any]:
+    def best_operation(self, pips_mode=True) -> Tuple[Decimal, dt]:
         if pips_mode:
             column = 'Pips'
             factor = 10
         else:
             column = 'Profit'
             factor = 1
-        return self.operations[column].max() * factor, \
-            self.operations.iloc[self.operations[column].idxmax()]['Close Time']
+        magnitude, moment = self.operations[column].max() * factor, \
+                            self.operations.iloc[self.operations[column].idxmax()]['Close Time']
+        magnitude, moment = Decimal(magnitude).quantize(Decimal(DEC_PREC)), moment
+        return magnitude, moment
 
-
-    def worst_operation(self, pips_mode=True) -> tuple[Any, Any]:
+    def worst_operation(self, pips_mode=True) -> Tuple[Decimal, dt]:
         if pips_mode:
             column = 'Pips'
             factor = 1
         else:
             column = 'Profit'
             factor = 10
-            
-        return self.operations[column].min() * factor, \
-            self.operations.iloc[self.operations[column].idxmin()]['Close Time']
 
+        magnitude, moment = self.operations[column].min() * factor, \
+                            self.operations.iloc[self.operations[column].idxmin()]['Close Time']
+        magnitude, moment = Decimal(magnitude).quantize(Decimal(DEC_PREC)), moment
+        return magnitude, moment
 
-    def calculate_avg_win(self, pips_mode=True) -> int:
+    def calculate_avg_win(self, pips_mode=True) -> Decimal:
         column = 'Pips' if pips_mode else 'Profit'
-        ganancia = self.operations[self.operations[column] >= 0][column].mean()
-        return int(np.round(ganancia, 0))
+        ganancia = self.operations[self.operations[column] >= 0][column].mean().item()
+        return Decimal(ganancia).quantize(Decimal(DEC_PREC))
 
-
-    def calculate_avg_loss(self, pips_mode=True) -> int:
+    def calculate_avg_loss(self, pips_mode=True) -> Decimal:
         column = 'Pips' if pips_mode else 'Profit'
-        perdida = self.operations[self.operations[column] < 0][column].mean()
-        return int(np.round(perdida, 0))
-
+        perdida = self.operations[self.operations[column] < 0][column].mean().item()
+        return Decimal(perdida).quantize(Decimal(DEC_PREC))
 
     def calculate_total_time(self) -> dt.timedelta:
         inicio = self.operations['Open Time'].iloc[0]
         fin = self.operations['Close Time'].iloc[-1]
-        return (fin - inicio)
+        return fin - inicio
 
-
-    def gross_profit(self, pips_mode=True) -> int:
+    def gross_profit(self, pips_mode=True) -> Decimal:
         column = 'Pips' if pips_mode else 'Profit'
-        return self.operations[self.operations[column] >= 0][column].sum()
+        gp = self.operations[self.operations[column] >= 0][column].sum()
+        return Decimal(gp).quantize(Decimal(DEC_PREC))
 
-
-    def gross_loss(self, pips_mode=True) -> int:
+    def gross_loss(self, pips_mode=True) -> Decimal:
         column = 'Pips' if pips_mode else 'Profit'
-        return self.operations[self.operations[column] < 0][column].sum()
-
+        gl = self.operations[self.operations[column] < 0][column].sum()
+        return Decimal(gl).quantize(Decimal(DEC_PREC))
 
     def _eqm(self, pips_mode=True) -> Tuple[Any, Any, Any]:
         column = 'Pips' if pips_mode else 'Profit'
@@ -557,8 +562,8 @@ class BtMetrics:
 
         return x, y, error
 
-
-    def kratio(self, pips_mode=True) -> float:
-        x, y, error = self._eqm(self.operations, pips_mode)
+    def calculate_kratio(self, pips_mode=True) -> Decimal:
+        x, y, error = self._eqm(pips_mode)
         model = LinearRegression().fit(x, y)
-        return model.coef_[0] / (error * len(x))
+        kr = model.coef_[0] / (error * len(x))
+        return Decimal(kr).quantize(Decimal(DEC_PREC))

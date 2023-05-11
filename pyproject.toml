@@ -6,4 +6,15 @@ markers = [
     "metricsprops",
     "notimplemented",
     "exposures",
+    "strikes",
+    "lots",
+    "timerelated",
+    "pct",
+    "closingdays",
+    "sqn",
+    "sharpe",
+    "kratio",
+    "operations",
+    "money",
+    "addedmetricsfeatures"
 ]
