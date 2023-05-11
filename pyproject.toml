@@ -16,4 +16,5 @@ markers = [
     "kratio",
     "operations",
     "money",
+    "addedmetricsfeatures"
 ]

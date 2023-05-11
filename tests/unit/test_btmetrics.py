@@ -503,3 +503,7 @@ class TestBtMetricsCalculations:
     def test_bt_metrics_gross_loss_in_money_returns_correct_value(self, mt):
         assert mt.gross_loss(pips_mode=True) == Decimal(-460.00).quantize(Decimal(DEC_PREC))
 
+
+@pytest.mark.addedmetricsfeatures
+class TestBtMetricsAdditionalFeatures:
+    pass
