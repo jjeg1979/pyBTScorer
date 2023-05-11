@@ -28,7 +28,7 @@ from src.parser.btgenbox import (
 
 # Dummy test - Courtesy of JJ
 def test_btgenbox_import_works_properly():
-    pass
+    assert True == True
     
 
 @pytest.fixture(autouse=True)
