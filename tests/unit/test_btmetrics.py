@@ -30,7 +30,7 @@ from src.parser.btmetrics import (
 @pytest.fixture(autouse=True)
 def mt():
     bt = BtGenbox(Path(r'src/payload'), BT_FILES[0])
-    return BtMetrics(bt)
+    return BtMetrics(bt, calc_metrics_at_init=False, pips_mode=True)
 
 
 # Dummy test - Courtesy of JJ
@@ -55,31 +55,38 @@ class TestBtmetricsProperties:
     def test_btmetrics_available_metrics(self, mt):
         """available_metrics should return the correct names of the metrics"""
         assert mt.available_metrics == ALL_METRICS
+        
+    def test_btmetrics_all_metrics_calculated_at_init_or_not(self, mt):
+        print(mt.calc_metrics_at_init)
+        if not mt.calc_metrics_at_init:
+            assert mt.all_metrics is not None
+        else:
+            assert mt.all_metrics is None
 
 
 @pytest.mark.metricsvalues
 class TestBtMetricsCalculations:
     """Test the correct calculations from the BTMetrics class"""
 
-    def test_bt_metrics_calculate_pf_returns_a_decimal(self, mt):
+    def test_btmetrics_calculate_pf_returns_a_decimal(self, mt):
         assert isinstance(mt.calculate_pf(), Decimal)
 
-    def test_bt_metrics_calculate_pf_in_pips(self, mt):
+    def test_btmetrics_calculate_pf_in_pips(self, mt):
         expected = Decimal(1.84).quantize(Decimal(DEC_PREC))
         assert mt.calculate_pf() == expected
 
-    def test_bt_metrics_calculate_pf_in_money(self, mt):
+    def test_btmetrics_calculate_pf_in_money(self, mt):
         expected = Decimal(1.84).quantize(Decimal(DEC_PREC))
         assert mt.calculate_pf(pips_mode=False) == expected
 
-    def test_bt_metrics_drawdown_returns_a_series(self, mt):
+    def test_btmetrics_drawdown_returns_a_series(self, mt):
         assert isinstance(mt.drawdown(), pd.Series)
 
-    def test_bt_metrics_drawdown_in_pips(self, mt):
+    def test_btmetrics_drawdown_in_pips(self, mt):
         expected = Decimal(-664.40).quantize(Decimal(DEC_PREC))
         assert Decimal(mt.drawdown().min()).quantize(Decimal(DEC_PREC)) == expected
 
-    def test_bt_metrics_drawdown_in_money(self, mt):
+    def test_btmetrics_drawdown_in_money(self, mt):
         expected = Decimal(-66.40).quantize(Decimal(DEC_PREC))
         assert Decimal(mt.drawdown(pips_mode=False).min()).quantize(Decimal(DEC_PREC)) \
                == expected
@@ -103,31 +110,31 @@ class TestBtMetricsCalculations:
         assert max(mt.stagnation_periods(pips_mode=True)) == \
                max(mt.stagnation_periods(pips_mode=False))
 
-    def test_bt_metrics_dd2_returns_a_series(self, mt):
+    def test_btmetrics_dd2_returns_a_series(self, mt):
         assert isinstance(mt.dd2(), pd.Series)
 
-    def test_bt_metrics_dd2_in_pips(self, mt):
+    def test_btmetrics_dd2_in_pips(self, mt):
         expected = Decimal(-627.00).quantize(Decimal(DEC_PREC))
         assert Decimal(mt.dd2().min()).quantize(Decimal(DEC_PREC)) == expected
 
-    def test_bt_metrics_dd2_in_money(self, mt):
+    def test_btmetrics_dd2_in_money(self, mt):
         expected = Decimal(-62.70).quantize(Decimal(DEC_PREC))
         assert Decimal(mt.dd2(pips_mode=False).min()).quantize(Decimal(DEC_PREC)) == expected
 
-    def test_bt_metrics_esp_returns_a_Decimal(self, mt):
+    def test_btmetrics_esp_returns_a_Decimal(self, mt):
         assert isinstance(mt.esp(pips_mode=True), Decimal)
         assert isinstance(mt.esp(pips_mode=False), Decimal)
 
-    def test_bt_metrics_esp_in_pips(self, mt):
+    def test_btmetrics_esp_in_pips(self, mt):
         expected = Decimal(11.42).quantize(Decimal(DEC_PREC))
         assert Decimal(mt.esp()).quantize(Decimal(DEC_PREC)) == expected
 
-    def test_bt_metrics_esp_in_money(self, mt):
+    def test_btmetrics_esp_in_money(self, mt):
         expected = Decimal(1.14).quantize(Decimal(DEC_PREC))
         assert Decimal(mt.esp(pips_mode=False)).quantize(Decimal(DEC_PREC)) == expected
 
     @pytest.mark.exposures
-    def test_bt_metrics_exposures_returns_a_tuple_of_list(self, mt):
+    def test_btmetrics_exposures_returns_a_tuple_of_list(self, mt):
         resp = mt.exposures()
         exp, vols = resp
         # breakpoint()
@@ -140,7 +147,7 @@ class TestBtMetricsCalculations:
             assert isinstance(vol, float)
 
     @pytest.mark.exposures
-    def test_bt_metrics_exposures_correct_value(self, mt):
+    def test_btmetrics_exposures_correct_value(self, mt):
         exp_expected = 7
         vols_expected = Decimal(0.07).quantize(Decimal(DEC_PREC))
         exp_act, vols_act = mt.exposures()
@@ -148,108 +155,108 @@ class TestBtMetricsCalculations:
         assert Decimal(max(vols_act)).quantize(Decimal(DEC_PREC)) == vols_expected
 
     @pytest.mark.strikes
-    def test_bt_metrics_max_losing_strikes_in_pips_returns_int(self, mt):
+    def test_btmetrics_max_losing_strikes_in_pips_returns_int(self, mt):
         assert isinstance(mt.get_max_losing_strike(pips_mode=True), int)
 
     @pytest.mark.strikes
-    def test_bt_metrics_max_losing_strikes_in_money_returns_int(self, mt):
+    def test_btmetrics_max_losing_strikes_in_money_returns_int(self, mt):
         assert isinstance(mt.get_max_losing_strike(pips_mode=False), int)
 
     @pytest.mark.strikes
-    def test_bt_metrics_max_losing_strikes_in_pips_correct_value(self, mt):
+    def test_btmetrics_max_losing_strikes_in_pips_correct_value(self, mt):
         assert mt.get_max_losing_strike(pips_mode=True) == 9
 
     @pytest.mark.strikes
-    def test_bt_metrics_max_losing_strikes_in_money_correct_value(self, mt):
+    def test_btmetrics_max_losing_strikes_in_money_correct_value(self, mt):
         assert mt.get_max_losing_strike(pips_mode=False) == 9
 
     @pytest.mark.strikes
-    def test_bt_metrics_max_losing_strikes_in_pips_and_money_are_consistent(self, mt):
+    def test_btmetrics_max_losing_strikes_in_pips_and_money_are_consistent(self, mt):
         assert mt.get_max_losing_strike(pips_mode=True) == \
             mt.get_max_losing_strike(pips_mode=False)
 
     @pytest.mark.strikes
-    def test_bt_metrics_max_winning_strikes_in_pips_returns_int(self, mt):
+    def test_btmetrics_max_winning_strikes_in_pips_returns_int(self, mt):
         assert isinstance(mt.get_max_winning_strike(pips_mode=True), int)
 
     @pytest.mark.strikes
-    def test_bt_metrics_max_winning_strikes_in_money_returns_int(self, mt):
+    def test_btmetrics_max_winning_strikes_in_money_returns_int(self, mt):
         assert isinstance(mt.get_max_winning_strike(pips_mode=False), int)
 
     @pytest.mark.strikes
-    def test_bt_metrics_max_losing_winning_in_pips_correct_value(self, mt):
+    def test_btmetrics_max_losing_winning_in_pips_correct_value(self, mt):
         assert mt.get_max_winning_strike(pips_mode=True) == 12
 
     @pytest.mark.strikes
-    def test_bt_metrics_max_winning_strikes_in_money_correct_value(self, mt):
+    def test_btmetrics_max_winning_strikes_in_money_correct_value(self, mt):
         assert mt.get_max_winning_strike(pips_mode=False) == 12
 
     @pytest.mark.strikes
-    def test_bt_metrics_max_winning_strikes_in_pips_and_money_are_consistent(self, mt):
+    def test_btmetrics_max_winning_strikes_in_pips_and_money_are_consistent(self, mt):
         assert mt.get_max_winning_strike(pips_mode=True) == \
                mt.get_max_winning_strike(pips_mode=False)
 
     @pytest.mark.strikes
-    def test_bt_metrics_avg_losing_strikes_in_pips_returns_Decimal(self, mt):
+    def test_btmetrics_avg_losing_strikes_in_pips_returns_Decimal(self, mt):
         assert isinstance(mt.get_avg_losing_strike(pips_mode=True), Decimal)
 
     @pytest.mark.strikes
-    def test_bt_metrics_avg_losing_strikes_in_money_returns_Decimal(self, mt):
+    def test_btmetrics_avg_losing_strikes_in_money_returns_Decimal(self, mt):
         assert isinstance(mt.get_avg_losing_strike(pips_mode=False), Decimal)
 
     @pytest.mark.strikes
-    def test_bt_metrics_avg_losing_strikes_in_pips_correct_value(self, mt):
+    def test_btmetrics_avg_losing_strikes_in_pips_correct_value(self, mt):
         assert mt.get_avg_losing_strike(pips_mode=True) == Decimal(3.43).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.strikes
-    def test_bt_metrics_avg_losing_strikes_in_money_correct_value(self, mt):
+    def test_btmetrics_avg_losing_strikes_in_money_correct_value(self, mt):
         assert mt.get_avg_losing_strike(pips_mode=False) == Decimal(3.31).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.strikes
-    def test_bt_metrics_avg_winning_strikes_in_pips_returns_Decimal(self, mt):
+    def test_btmetrics_avg_winning_strikes_in_pips_returns_Decimal(self, mt):
         assert isinstance(mt.get_avg_winning_strike(pips_mode=True), Decimal)
 
     @pytest.mark.strikes
-    def test_bt_metrics_avg_winning_strikes_in_money_returns_Decimal(self, mt):
+    def test_btmetrics_avg_winning_strikes_in_money_returns_Decimal(self, mt):
         assert isinstance(mt.get_avg_winning_strike(pips_mode=False), Decimal)
 
     @pytest.mark.strikes
-    def test_bt_metrics_avg_winning_strikes_in_pips_correct_value(self, mt):
+    def test_btmetrics_avg_winning_strikes_in_pips_correct_value(self, mt):
         assert mt.get_avg_winning_strike(pips_mode=True) == Decimal(2.74).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.strikes
-    def test_bt_metrics_avg_winning_strikes_in_money_correct_value(self, mt):
+    def test_btmetrics_avg_winning_strikes_in_money_correct_value(self, mt):
         assert mt.get_avg_winning_strike(pips_mode=False) == Decimal(2.70).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.lots
-    def test_bt_metrics_max_lots_returns_Decimal(self, mt):
+    def test_btmetrics_max_lots_returns_Decimal(self, mt):
         assert isinstance(mt.get_max_lots(), Decimal)
 
     @pytest.mark.lots
-    def test_bt_metrics_max_lots_returns_correct_value(self, mt):
+    def test_btmetrics_max_lots_returns_correct_value(self, mt):
         assert mt.get_max_lots() == Decimal(0.01).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.lots
-    def test_bt_metrics_min_lots_returns_Decimal(self, mt):
+    def test_btmetrics_min_lots_returns_Decimal(self, mt):
         assert isinstance(mt.get_min_lots(), Decimal)
 
     @pytest.mark.lots
-    def test_bt_metrics_min_lots_returns_correct_value(self, mt):
+    def test_btmetrics_min_lots_returns_correct_value(self, mt):
         assert mt.get_min_lots() == Decimal(0.01).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.lots
-    def test_bt_metrics_max_lots_greater_or_equal_than_min_lots(self, mt):
+    def test_btmetrics_max_lots_greater_or_equal_than_min_lots(self, mt):
         assert mt.get_max_lots() >= mt.get_min_lots()
 
     @pytest.mark.timerelated
-    def test_bt_metrics_time_in_market_returns_tuple_of_ints(self, mt):
+    def test_btmetrics_time_in_market_returns_tuple_of_ints(self, mt):
         time_in_market = mt.calculate_time_in_market()
         assert isinstance(time_in_market, tuple)
         for item in time_in_market:
             assert isinstance(item, int)
 
     @pytest.mark.timerelated
-    def test_bt_metrics_time_in_market_returns_correct_values(self, mt):
+    def test_btmetrics_time_in_market_returns_correct_values(self, mt):
         days, hours, minutes, seconds = mt.calculate_time_in_market()
         assert days == 246
         assert hours == 20
@@ -257,93 +264,93 @@ class TestBtMetricsCalculations:
         assert seconds == 0
 
     @pytest.mark.pct
-    def test_bt_metrics_pct_win_in_pips_returns_Decimal(self, mt):
+    def test_btmetrics_pct_win_in_pips_returns_Decimal(self, mt):
         assert isinstance(mt.pct_win(pips_mode=True), Decimal)
 
     @pytest.mark.pct
-    def test_bt_metrics_pct_win_in_money_returns_Decimal(self, mt):
+    def test_btmetrics_pct_win_in_money_returns_Decimal(self, mt):
         assert isinstance(mt.pct_win(pips_mode=False), Decimal)
 
     @pytest.mark.pct
-    def test_bt_metrics_pct_win_in_pips_returns_correct_value(self, mt):
+    def test_btmetrics_pct_win_in_pips_returns_correct_value(self, mt):
         assert mt.pct_win(pips_mode=True) == Decimal(47.63).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.pct
-    def test_bt_metrics_pct_win_in_money_returns_correct_value(self, mt):
+    def test_btmetrics_pct_win_in_money_returns_correct_value(self, mt):
         assert mt.pct_win(pips_mode=False) == Decimal(47.04).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.pct
     @pytest.mark.xfail(__version__ < "0.3.0", reason="Bug identified but won't be fixed until version 0.3.0")
-    def test_bt_metrics_pct_win_in_pips_and_in_money_are_consistent(self, mt):
+    def test_btmetrics_pct_win_in_pips_and_in_money_are_consistent(self, mt):
         assert mt.pct_win(pips_mode=True) == mt.pct_win(pips_mode=False)
 
     @pytest.mark.pct
-    def test_bt_metrics_pct_loss_in_pips_returns_Decimal(self, mt):
+    def test_btmetrics_pct_loss_in_pips_returns_Decimal(self, mt):
         assert isinstance(mt.pct_loss(pips_mode=True), Decimal)
 
     @pytest.mark.pct
-    def test_bt_metrics_pct_loss_in_money_returns_Decimal(self, mt):
+    def test_btmetrics_pct_loss_in_money_returns_Decimal(self, mt):
         assert isinstance(mt.pct_loss(pips_mode=False), Decimal)
 
     @pytest.mark.pct
-    def test_bt_metrics_pct_loss_in_pips_returns_correct_value(self, mt):
+    def test_btmetrics_pct_loss_in_pips_returns_correct_value(self, mt):
         assert mt.pct_loss(pips_mode=True) == Decimal(52.37).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.pct
-    def test_bt_metrics_pct_loss_in_money_returns_correct_value(self, mt):
+    def test_btmetrics_pct_loss_in_money_returns_correct_value(self, mt):
         assert mt.pct_loss(pips_mode=False) == Decimal(52.96).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.pct
     @pytest.mark.xfail(__version__ < "0.3.0", reason="Bug identified but won't be fixed until version 0.3.0")
-    def test_bt_metrics_pct_loss_in_pips_and_in_money_are_consistent(self, mt):
+    def test_btmetrics_pct_loss_in_pips_and_in_money_are_consistent(self, mt):
         assert mt.pct_loss(pips_mode=True) == mt.pct_loss(pips_mode=False)
 
     @pytest.mark.pct
-    def test_bt_metrics_pct_loss_and_mt_pct_win_in_pips_add_up_to_one_hundred(self, mt):
+    def test_btmetrics_pct_loss_and_mt_pct_win_in_pips_add_up_to_one_hundred(self, mt):
         assert mt.pct_win(pips_mode=True) + mt.pct_loss(pips_mode=True) == Decimal(100)
 
     @pytest.mark.pct
-    def test_bt_metrics_pct_loss_and_mt_pct_win_in_money_add_up_to_one_hundred(self, mt):
+    def test_btmetrics_pct_loss_and_mt_pct_win_in_money_add_up_to_one_hundred(self, mt):
         assert mt.pct_win(pips_mode=False) + mt.pct_loss(pips_mode=False) == Decimal(100)
 
     @pytest.mark.closingdays
-    def test_bt_metrics_calculate_closing_days_returns_an_int(self, mt):
+    def test_btmetrics_calculate_closing_days_returns_an_int(self, mt):
         assert isinstance(mt.calculate_closing_days(), int)
 
     @pytest.mark.closingdays
-    def test_bt_metrics_calculate_closing_days_returns_correct_value(self, mt):
+    def test_btmetrics_calculate_closing_days_returns_correct_value(self, mt):
         assert mt.calculate_closing_days() == 200
 
     @pytest.mark.sqn
-    def test_bt_metrics_calculate_sqn_in_pips_returns_Decimal(self, mt):
+    def test_btmetrics_calculate_sqn_in_pips_returns_Decimal(self, mt):
         assert isinstance(mt.calculate_sqn(pips_mode=True), Decimal)
 
     @pytest.mark.sqn
-    def test_bt_metrics_calculate_sqn_in_money_returns_Decimal(self, mt):
+    def test_btmetrics_calculate_sqn_in_money_returns_Decimal(self, mt):
         assert isinstance(mt.calculate_sqn(pips_mode=False), Decimal)
 
     @pytest.mark.sqn
-    def test_bt_metrics_calculate_sqn_in_pips_returns_correct_value(self, mt):
+    def test_btmetrics_calculate_sqn_in_pips_returns_correct_value(self, mt):
         assert mt.calculate_sqn(pips_mode=True) == Decimal(3.88).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.sqn
-    def test_bt_metrics_calculate_sqn_in_money_returns_correct_value(self, mt):
+    def test_btmetrics_calculate_sqn_in_money_returns_correct_value(self, mt):
         assert mt.calculate_sqn(pips_mode=False) == Decimal(3.88).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.sqn
-    def test_bt_metrics_calculate_sqn_in_pips_and_in_money_are_consistent(self, mt):
+    def test_btmetrics_calculate_sqn_in_pips_and_in_money_are_consistent(self, mt):
         assert mt.calculate_sqn(pips_mode=True) == mt.calculate_sqn(pips_mode=False)
 
     @pytest.mark.sharpe
-    def test_bt_metrics_calculate_sharpe_in_pips_returns_Decimal(self, mt):
+    def test_btmetrics_calculate_sharpe_in_pips_returns_Decimal(self, mt):
         assert isinstance(mt.calculate_sharpe(pips_mode=True), Decimal)
 
     @pytest.mark.sharpe
-    def test_bt_metrics_calculate_sharpe_in_money_returns_Decimal(self, mt):
+    def test_btmetrics_calculate_sharpe_in_money_returns_Decimal(self, mt):
         assert isinstance(mt.calculate_sharpe(pips_mode=False), Decimal)
 
     @pytest.mark.sharpe
-    def test_bt_metrics_calculate_sharpe_in_pips_returns_correct_value(self, mt):
+    def test_btmetrics_calculate_sharpe_in_pips_returns_correct_value(self, mt):
         assert mt.calculate_sharpe(pips_mode=True) == Decimal(71.33).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.sharpe
@@ -351,11 +358,11 @@ class TestBtMetricsCalculations:
         assert mt.calculate_sharpe(pips_mode=False) == Decimal(71.33).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.sharpe
-    def test_bt_metrics_calculate_sharpe_in_pips_and_in_money_are_consistent(self, mt):
+    def test_btmetrics_calculate_sharpe_in_pips_and_in_money_are_consistent(self, mt):
         assert mt.calculate_sharpe(pips_mode=True) == mt.calculate_sharpe(pips_mode=False)
 
     @pytest.mark.kratio
-    def test_bt_metrics_calculate_kratio_in_pips_returns_Decimal(self, mt):
+    def test_btmetrics_calculate_kratio_in_pips_returns_Decimal(self, mt):
         assert isinstance(mt.calculate_kratio(pips_mode=True), Decimal)
 
     @pytest.mark.kratio
@@ -363,33 +370,33 @@ class TestBtMetricsCalculations:
         assert isinstance(mt.calculate_kratio(pips_mode=False), Decimal)
 
     @pytest.mark.kratio
-    def test_bt_metrics_calculate_kratio_in_pips_returns_correct_value(self, mt):
+    def test_btmetrics_calculate_kratio_in_pips_returns_correct_value(self, mt):
         assert mt.calculate_kratio(pips_mode=True) == Decimal(0.19).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.kratio
-    def test_bt_metrics_calculate_kratio_in_money_returns_correct_value(self, mt):
+    def test_btmetrics_calculate_kratio_in_money_returns_correct_value(self, mt):
         assert mt.calculate_kratio(pips_mode=False) == Decimal(0.19).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.kratio
-    def test_bt_metrics_calculate_kratio_in_pips_and_in_money_are_consistent(self, mt):
+    def test_btmetrics_calculate_kratio_in_pips_and_in_money_are_consistent(self, mt):
         assert mt.calculate_kratio(pips_mode=True) == mt.calculate_kratio(pips_mode=False)
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_best_operation_in_pips_returns_a_tuple(self, mt):
+    def test_btmetrics_calculate_best_operation_in_pips_returns_a_tuple(self, mt):
         magnitude, moment = mt.best_operation(pips_mode=True)
         assert isinstance(mt.best_operation(pips_mode=True), tuple)
         assert isinstance(magnitude, Decimal)
         assert isinstance(moment, datetime)
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_best_operation_in_money_returns_a_tuple(self, mt):
+    def test_btmetrics_calculate_best_operation_in_money_returns_a_tuple(self, mt):
         magnitude, moment = mt.best_operation(pips_mode=False)
         assert isinstance(mt.best_operation(pips_mode=False), tuple)
         assert isinstance(magnitude, Decimal)
         assert isinstance(moment, datetime)
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_best_operation_in_pips_returns_correct_values(self, mt):
+    def test_btmetrics_calculate_best_operation_in_pips_returns_correct_values(self, mt):
         magnitude, moment = mt.best_operation(pips_mode=True)
         exp_moment = datetime(year=2020,
                               month=4,
@@ -401,21 +408,21 @@ class TestBtMetricsCalculations:
         assert moment == exp_moment
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_worst_operation_in_pips_returns_a_tuple(self, mt):
+    def test_btmetrics_calculate_worst_operation_in_pips_returns_a_tuple(self, mt):
         magnitude, moment = mt.worst_operation(pips_mode=True)
         assert isinstance(mt.worst_operation(pips_mode=True), tuple)
         assert isinstance(magnitude, Decimal)
         assert isinstance(moment, datetime)
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_worst_operation_in_money_returns_a_tuple(self, mt):
+    def test_btmetrics_calculate_worst_operation_in_money_returns_a_tuple(self, mt):
         magnitude, moment = mt.worst_operation(pips_mode=False)
         assert isinstance(mt.worst_operation(pips_mode=False), tuple)
         assert isinstance(magnitude, Decimal)
         assert isinstance(moment, datetime)
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_worst_operation_in_pips_returns_correct_values(self, mt):
+    def test_btmetrics_calculate_worst_operation_in_pips_returns_correct_values(self, mt):
         magnitude, moment = mt.worst_operation(pips_mode=True)
         exp_moment = datetime(year=2011,
                               month=11,
@@ -427,80 +434,80 @@ class TestBtMetricsCalculations:
         assert moment == exp_moment
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_avg_win_in_pips_returns_a_Decimal(self, mt):
+    def test_btmetrics_calculate_avg_win_in_pips_returns_a_Decimal(self, mt):
         assert isinstance(mt.calculate_avg_win(pips_mode=True), Decimal)
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_avg_win_in_money_returns_a_Decimal(self, mt):
+    def test_btmetrics_calculate_avg_win_in_money_returns_a_Decimal(self, mt):
         assert isinstance(mt.calculate_avg_win(pips_mode=False), Decimal)
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_avg_win_in_pips_returns_correct_value(self, mt):
+    def test_btmetrics_calculate_avg_win_in_pips_returns_correct_value(self, mt):
         assert mt.calculate_avg_win(pips_mode=True) == Decimal(52.23).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_avg_win_in_money_returns_correct_value(self, mt):
+    def test_btmetrics_calculate_avg_win_in_money_returns_correct_value(self, mt):
         assert mt.calculate_avg_win(pips_mode=False) == Decimal(5.16).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_avg_loss_in_pips_returns_a_Decimal(self, mt):
+    def test_btmetrics_calculate_avg_loss_in_pips_returns_a_Decimal(self, mt):
         assert isinstance(mt.calculate_avg_loss(pips_mode=True), Decimal)
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_avg_loss_in_money_returns_a_Decimal(self, mt):
+    def test_btmetrics_calculate_avg_loss_in_money_returns_a_Decimal(self, mt):
         assert isinstance(mt.calculate_avg_loss(pips_mode=False), Decimal)
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_avg_loss_in_pips_returns_correct_value(self, mt):
+    def test_btmetrics_calculate_avg_loss_in_pips_returns_correct_value(self, mt):
         assert mt.calculate_avg_loss(pips_mode=True) == Decimal(-26.14).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.operations
-    def test_bt_metrics_calculate_avg_loss_in_money_returns_correct_value(self, mt):
+    def test_btmetrics_calculate_avg_loss_in_money_returns_correct_value(self, mt):
         assert mt.calculate_avg_loss(pips_mode=False) == Decimal(-2.64).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.timerelated
-    def test_bt_metrics_calculate_total_time_returns_a_timedelta(self, mt):
+    def test_btmetrics_calculate_total_time_returns_a_timedelta(self, mt):
         assert isinstance(mt.calculate_total_time(), timedelta)
 
     @pytest.mark.timerelated
-    def test_bt_metrics_calculate_total_time_returns_correct_value(self, mt):
+    def test_btmetrics_calculate_total_time_returns_correct_value(self, mt):
         expected = timedelta(days=4322,
                              hours=20,
                              minutes=0)
         assert mt.calculate_total_time() == expected
 
     @pytest.mark.money
-    def test_bt_metrics_gross_profit_in_pips_returns_a_Decimal(self, mt):
+    def test_btmetrics_gross_profit_in_pips_returns_a_Decimal(self, mt):
         assert isinstance(mt.gross_profit(pips_mode=True), Decimal)
 
     @pytest.mark.money
-    def test_bt_metrics_gross_profit_in_money_returns_a_Decimal(self, mt):
+    def test_btmetrics_gross_profit_in_money_returns_a_Decimal(self, mt):
         assert isinstance(mt.gross_profit(pips_mode=False), Decimal)
 
     @pytest.mark.money
-    def test_bt_metrics_gross_profit_in_pips_returns_correct_value(self, mt):
+    def test_btmetrics_gross_profit_in_pips_returns_correct_value(self, mt):
         assert mt.gross_profit(pips_mode=True) == Decimal(8462.00).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.money
     @pytest.mark.xfail(reason='Known bug, but unknown reason with calculations in monetary terms')
-    def test_bt_metrics_gross_profit_in_money_returns_correct_value(self, mt):
+    def test_btmetrics_gross_profit_in_money_returns_correct_value(self, mt):
         assert mt.gross_profit(pips_mode=True) == Decimal(846.10).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.money
-    def test_bt_metrics_gross_loss_in_pips_returns_a_Decimal(self, mt):
+    def test_btmetrics_gross_loss_in_pips_returns_a_Decimal(self, mt):
         assert isinstance(mt.gross_loss(pips_mode=True), Decimal)
 
     @pytest.mark.money
-    def test_bt_metrics_gross_loss_in_money_returns_a_Decimal(self, mt):
+    def test_btmetrics_gross_loss_in_money_returns_a_Decimal(self, mt):
         assert isinstance(mt.gross_loss(pips_mode=False), Decimal)
 
     @pytest.mark.money
-    def test_bt_metrics_gross_loss_in_pips_returns_correct_value(self, mt):
+    def test_btmetrics_gross_loss_in_pips_returns_correct_value(self, mt):
         assert mt.gross_loss(pips_mode=True) == Decimal(-4601.50).quantize(Decimal(DEC_PREC))
 
     @pytest.mark.money
     @pytest.mark.xfail(reason='Known bug, but unknown reason with calculations in monetary terms')
-    def test_bt_metrics_gross_loss_in_money_returns_correct_value(self, mt):
+    def test_btmetrics_gross_loss_in_money_returns_correct_value(self, mt):
         assert mt.gross_loss(pips_mode=True) == Decimal(-460.00).quantize(Decimal(DEC_PREC))
 
 

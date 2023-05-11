@@ -93,12 +93,15 @@ class BtMetrics:
         * calculate_kratio
     """
 
-    def __init__(self, bt: BtGenbox) -> None:
+    def __init__(self, bt: BtGenbox, calc_metrics_at_init: bool = False, pips_mode: bool = True) -> None:
         """Creates and returns a Metrics object
 
         Args:
-            ops (pandas.DataFrame): Operations extracted from backtest 
-                                    in a Pandas DataFrame      
+            bt   (BtGenbox):                Genbox Backtest Object
+            calc_metrics_at_init (bool):    Calculate metrics at init or not
+            pips_mode:                      Metrics calculation mode:
+                                                True:   in pips terms
+                                                False:  in monetary terms
         
         Returns:
             None
@@ -108,7 +111,9 @@ class BtMetrics:
         """
         self._ops = bt.operations
         self._available_metrics = self.available_metrics
-        # self._all_metrics = self.calculate_metrics()
+        self.calc_metrics_at_init = calc_metrics_at_init
+        self._pips_or_money = pips_mode
+        self._all_metrics = self._calculate_metrics(self.pips_or_money) if calc_metrics_at_init else None
 
     @property
     def operations(self) -> pd.DataFrame:
@@ -131,10 +136,18 @@ class BtMetrics:
         self._ops = value if value is pd.DataFrame else None
 
     @property
+    def pips_or_money(self) -> bool:
+        return self._pips_or_money
+
+    @pips_or_money.setter
+    def pips_or_money(self, value: bool) -> None:
+        self._pips_or_money = value
+
+    @property
     def all_metrics(self) -> dict:
         """ Property that returns a dict with the names of all the metrics and
             the corresponding values calculated."""
-        return {}
+        return self._all_metrics if self._all_metrics is not None else self._calculate_metrics(self.pips_or_money)
 
     @property
     def available_metrics(self) -> Set[str]:
