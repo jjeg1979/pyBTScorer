@@ -14,11 +14,12 @@ from src.parser.btparser import BtParser
 # (not always the case, coming from JJ LoL)
 def test_btparser_import_works_properly():
     """Dummy test: Test whether the project import works or not"""
-    assert True == True
+    pass
     
 
-@pytest.mark.skip(reason='Need to dig fix relative import with @patch decorator')
-@patch("..src.parser.btparser.BtParser.__abstractmethods__", set())
+@pytest.mark.abstract
+#@pytest.mark.skip(reason='Need to dig fix relative import with @patch decorator')
+@patch.object(BtParser, '__abstractmethods__', set())
 def test_btparser_init():
     """Need to patch the base class, since it is absstract"""
     bt = BtParser(Path('/'), 'example.txt')
