@@ -113,7 +113,36 @@ class BtMetrics:
         self._available_metrics = self.available_metrics
         self.calc_metrics_at_init = calc_metrics_at_init
         self._pips_or_money = pips_mode
-        self._all_metrics = self._calculate_metrics(self.pips_or_money) if calc_metrics_at_init else None
+        self._metrics_functions = \
+        {
+            'PF': self.calculate_pf(pips_mode),
+            'EP': self.esp(pips_mode),
+            'DD': self.drawdown(pips_mode),
+            'Stagnation Period': self.stagnation_periods(pips_mode),
+            'DD2': self.dd2(pips_mode),
+            'Max. Exposure': max(self.exposures()),
+            'Max. Losing Strike': self.get_max_losing_strike(),
+            'Max. Winning Strike': self.get_max_winning_strike(),
+            'Avg. Losing Strike': self.get_avg_losing_strike(),
+            'Avg. Winning Strike': self.get_avg_winning_strike(),
+            'Max. Lots': self.get_max_lots(),
+            'Min. Lots': self.get_min_lots(),
+            'Time in Market': self.calculate_time_in_market(),
+            'Pct. Win': self.pct_win(pips_mode),
+            'Pct. Loss': self.pct_loss(pips_mode),
+            'Closing Days': self.calculate_closing_days(),
+            'SQN': self.calculate_sqn(pips_mode),
+            'Sharpe': self.calculate_sharpe(pips_mode),
+            'Best Op': self.best_operation(pips_mode),
+            'Worst Op': self.worst_operation(pips_mode),
+            'Avg Win:': self.calculate_avg_win(pips_mode),
+            'Avg Loss': self.calculate_avg_loss(pips_mode),
+            'Backtest Time': self.calculate_total_time(),
+            'Gross Profit': self.gross_profit(pips_mode),
+            'Gross Loss': self.gross_loss(pips_mode),
+            'Kratio': self.calculate_kratio(pips_mode),
+        }
+        self._all_metrics = self._calculate_all_metrics(self.pips_or_money) if calc_metrics_at_init else None
 
     @property
     def operations(self) -> pd.DataFrame:
@@ -147,7 +176,7 @@ class BtMetrics:
     def all_metrics(self) -> dict:
         """ Property that returns a dict with the names of all the metrics and
             the corresponding values calculated."""
-        return self._all_metrics if self._all_metrics is not None else self._calculate_metrics(self.pips_or_money)
+        return self._all_metrics if self._all_metrics is not None else self._calculate_all_metrics(self.pips_or_money)
 
     @property
     def available_metrics(self) -> Set[str]:
@@ -195,8 +224,21 @@ class BtMetrics:
         #     'Kratio'              : self.calculate_kratio,
         # }
         return ALL_METRICS
+    
+    def _calculate_one_metric(self, metric_name: str) -> Any:
+        """ Calculates the value for metric_name. 
+            It has to be one valid metric_name (i.e. already known by BtMetrics class)
+            
+        Args:
+            metric_name:    String with the metric name
+            
+        Returns:
+            (Any):  Depending on the demanded metric (Decimal, datetime, dict...)
+        """
+        if metric_name in self.available_metrics:
+            return self._metrics_functions[metric_name]
 
-    def _calculate_metrics(self, pips_mode=True) -> dict:
+    def _calculate_all_metrics(self, pips_mode=True) -> dict:
         """Method that returns a dict with the values for the matrics included in this class
 
         Args:
@@ -261,7 +303,14 @@ class BtMetrics:
         if len(selected_metrics) == len(self.available_metrics):
             return self.all_metrics
 
-        return {metric: self.all_metrics[metric] for metric in selected_metrics}
+        # If all metrics were calculated at init, no need to calculate them
+        # again
+        if self.calc_metrics_at_init:
+            return {metric: self.all_metrics[metric] for \
+                metric in selected_metrics}
+        else:
+            return {metric: self._calculate_one_metric[metric] for \
+                metric in selected_metrics}
 
     def is_valid(self, criteria: dict) -> bool:
         """ Based on certain thresholds for some criteria determine if a 
