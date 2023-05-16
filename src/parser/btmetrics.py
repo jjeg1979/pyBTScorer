@@ -207,7 +207,11 @@ class BtMetrics:
     
     @property
     def valid(self) -> str:
-        match self.is_valid()
+        match self.is_valid():
+            case 'True':
+                return 'Y'
+            case 'False':
+                return 'N'
 
     @pips_or_money.setter
     def pips_or_money(self, value: bool) -> None:
@@ -733,6 +737,7 @@ class BtMetrics:
             ]
         if criteria is None:
             columns = [
+                self.valid,
                 
             ]
             
