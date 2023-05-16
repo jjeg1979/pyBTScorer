@@ -237,6 +237,8 @@ class BtMetrics:
         """
         if metric_name in self.available_metrics:
             return self._metrics_functions[metric_name]
+        else:
+            raise IndexError
 
     def _calculate_all_metrics(self, pips_mode=True) -> dict:
         """Method that returns a dict with the values for the matrics included in this class

@@ -62,7 +62,20 @@ class TestBtmetricsProperties:
             assert mt.all_metrics is not None
         else:
             assert mt.all_metrics is None
-
+            
+@pytest.mark.addedmetricsfeatures
+class TestBtmetricsAddMetricsFeatures:
+    """Test additional features like one metric calculation."""
+    
+    def test_btmetrics_calculate_one_metric_raises_index_error(self, mt):
+        """_calculate_one_metric raises IndexError with a bad metric name"""
+        with pytest.raises(IndexError) as er:
+            mt._calculate_one_metric('non-existent-metrics-name')
+        assert er.type is IndexError
+        
+    def test_btmetrics_calculate_one_metric_returns_correct_value(self, mt):
+        assert mt._calculate_one_metric('PF') == mt.calculate_pf()
+        
 
 @pytest.mark.metricsvalues
 class TestBtMetricsCalculations:
@@ -510,7 +523,3 @@ class TestBtMetricsCalculations:
     def test_btmetrics_gross_loss_in_money_returns_correct_value(self, mt):
         assert mt.gross_loss(pips_mode=True) == Decimal(-460.00).quantize(Decimal(DEC_PREC))
 
-
-@pytest.mark.addedmetricsfeatures
-class TestBtMetricsAdditionalFeatures:
-    pass
