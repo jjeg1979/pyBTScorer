@@ -24,6 +24,7 @@ from src.parser.btmetrics import (
     ALL_METRICS,
     DEC_PREC,
     INF,
+    DEFAULT_CRITERIA,
     BtMetrics,
 )
 
@@ -117,35 +118,8 @@ class TestBtmetricsAddMetricsFeatures:
     def test_btmetrics_num_ops_returns_correct_value(self, mt):
         assert mt.num_ops == 338    
             
-    def test_btmetrics_is_valid_correctly_classifies_backtest(self, mt):
-        criteria = {
-            'Kratio':
-                {
-                    'Min': 0.20,
-                    'Max': INF
-                },
-            'RF':
-                {
-                    'Min': 8.9,
-                    'Max': INF
-                },
-            'Num Ops':
-                {
-                    'Min': 250,
-                    'Max': INF
-                },
-            'Max. Exposure':
-                {
-                    'Min': 0.0,
-                    'Max': 0.22
-                },
-            'Closing Days':
-                {
-                    'Min': 100,
-                    'Max': INF,
-                },                
-        }
-        assert mt.is_valid(criteria) == False
+    def test_btmetrics_is_valid_correctly_classifies_backtest(self, mt):        
+        assert mt.is_valid(DEFAULT_CRITERIA) == False
         
 
 @pytest.mark.metricsvalues
@@ -593,3 +567,7 @@ class TestBtMetricsCalculations:
     def test_btmetrics_gross_loss_in_money_returns_correct_value(self, mt):
         assert mt.gross_loss(pips_mode=True) == Decimal(-460.00).quantize(Decimal(DEC_PREC))
 
+@pytest.mark.exporttofile
+class TestBtmetricsExportMetrics:
+    """Tests the export capabilities of the metrics class"""
+    pass

@@ -49,7 +49,34 @@ ALL_METRICS = {
 }
 # Precision to present the metrics (decimal places)
 DEC_PREC = '0.00'
-
+# Default criteria to determine if a set is valid or not
+DEFAULT_CRITERIA = {
+            'Kratio':
+                {
+                    'Min': 0.20,
+                    'Max': INF
+                },
+            'RF':
+                {
+                    'Min': 8.9,
+                    'Max': INF
+                },
+            'Num Ops':
+                {
+                    'Min': 250,
+                    'Max': INF
+                },
+            'Max. Exposure':
+                {
+                    'Min': 0.0,
+                    'Max': 0.22
+                },
+            'Closing Days':
+                {
+                    'Min': 100,
+                    'Max': INF,
+                },                
+        }
 
 ################################################################
 
@@ -59,7 +86,7 @@ class BtMetrics:
     backtest and to ensure that the
 
     Instance variables:
-       ops (pandas.DataFrame): Operations extracted from backtest in a Pandas DataFrame       
+       bt (Genbox): Backtest object
     
     Instance properties:    
         * operations
@@ -177,6 +204,10 @@ class BtMetrics:
     @property
     def pips_or_money(self) -> bool:
         return self._pips_or_money
+    
+    @property
+    def valid(self) -> str:
+        match self.is_valid()
 
     @pips_or_money.setter
     def pips_or_money(self, value: bool) -> None:
@@ -693,4 +724,15 @@ class BtMetrics:
         x, y, error = self._eqm(pips_mode)
         model = LinearRegression().fit(x, y)
         kr = model.coef_[0] / (error * len(x))
-        return Decimal(kr).quantize(Decimal(DEC_PREC))
+        return Decimal(kr).quantize(Decimal(DEC_PREC))   
+    
+    def to_csv(self, filename: str, criteria: set = None) -> None:
+        default_columns = [
+                self.bt.name,
+                self.bt.from_periods_to_text(self.bt.period),                
+            ]
+        if criteria is None:
+            columns = [
+                
+            ]
+            
