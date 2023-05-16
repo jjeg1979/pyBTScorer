@@ -23,6 +23,7 @@ from src.parser.btgenbox import (
 from src.parser.btmetrics import (
     ALL_METRICS,
     DEC_PREC,
+    INF,
     BtMetrics,
 )
 
@@ -73,8 +74,78 @@ class TestBtmetricsAddMetricsFeatures:
             mt._calculate_one_metric('non-existent-metrics-name')
         assert er.type is IndexError
         
+    def test_btmetrics_max_dd_in_pips_returns_a_Decimal(self, mt):
+        """max_dd should return a Decimal value."""
+        assert isinstance(mt.max_dd(pips_mode=True, f='dd'), Decimal)
+        
+    def test_btmetrics_max_dd_in_money_returns_a_Decimal(self, mt):
+        """max_dd should return a Decimal value."""
+        assert isinstance(mt.max_dd(pips_mode=False, f='dd'), Decimal)
+        
+    def test_btmetrics_max_dd2_in_pips_returns_a_Decimal(self, mt):
+        """max_dd should return a Decimal value."""
+        assert isinstance(mt.max_dd(pips_mode=True, f='dd2'), Decimal)
+        
+    def test_btmetrics_max_dd2_in_money_returns_a_Decimal(self, mt):
+        """max_dd should return a Decimal value."""
+        assert isinstance(mt.max_dd(pips_mode=False, f='dd2'), Decimal)
+    
+    @pytest.mark.justonemetric        
     def test_btmetrics_calculate_one_metric_returns_correct_value(self, mt):
-        assert mt._calculate_one_metric('PF') == mt.calculate_pf()
+        all_metrics = mt.all_metrics
+        for metric in ALL_METRICS:
+            assert mt._calculate_one_metric(metric) == all_metrics[metric]
+            
+    def test_btmetrics_calculate_rf_in_pips_returns_a_Decimal(self, mt):
+        assert isinstance(mt.calculate_rf(pips_mode=True), Decimal)
+        
+    def test_btmetrics_calculate_rf_in_money_returns_a_Decimal(self, mt):
+        assert isinstance(mt.calculate_rf(pips_mode=False), Decimal)
+        
+    def test_btmetrics_calculate_rf_in_pips_returns_correct_value(self, mt):
+        assert mt.calculate_rf(pips_mode=True) == Decimal(12.74).quantize(Decimal(DEC_PREC))
+        
+    def test_btmetrics_calculate_rf_in_money_returns_correct_value(self, mt):
+        assert mt.calculate_rf(pips_mode=False) == Decimal(12.74).quantize(Decimal(DEC_PREC))
+        
+    def test_btmetrics_calculate_rf_in_pips_and_in_money_are_consistent(self, mt):
+        assert mt.calculate_rf(pips_mode=True) == mt.calculate_rf(pips_mode=False)
+    
+    def test_btmetrics_num_ops_returns_an_int(self, mt):
+        assert isinstance(mt.num_ops, int)        
+    
+    def test_btmetrics_num_ops_returns_correct_value(self, mt):
+        assert mt.num_ops == 338    
+            
+    def test_btmetrics_is_valid_correctly_classifies_backtest(self, mt):
+        criteria = {
+            'Kratio':
+                {
+                    'Min': 0.20,
+                    'Max': INF
+                },
+            'RF':
+                {
+                    'Min': 8.9,
+                    'Max': INF
+                },
+            'Num Ops':
+                {
+                    'Min': 250,
+                    'Max': INF
+                },
+            'Max. Exposure':
+                {
+                    'Min': 0.0,
+                    'Max': 0.22
+                },
+            'Closing Days':
+                {
+                    'Min': 100,
+                    'Max': INF,
+                },                
+        }
+        assert mt.is_valid(criteria) == False
         
 
 @pytest.mark.metricsvalues
@@ -149,8 +220,7 @@ class TestBtMetricsCalculations:
     @pytest.mark.exposures
     def test_btmetrics_exposures_returns_a_tuple_of_list(self, mt):
         resp = mt.exposures()
-        exp, vols = resp
-        # breakpoint()
+        exp, vols = resp        
         assert isinstance(resp, tuple)
         assert isinstance(exp, list)
         assert isinstance(vols, list)

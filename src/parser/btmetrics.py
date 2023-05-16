@@ -15,6 +15,8 @@ from .btgenbox import BtGenbox
 
 ################################################################
 # CONSTANTS AND ENUMERATIONS USED BY THIS CLASS
+# INFINITE (alilas for numpy.inf)
+INF = np.inf
 # Set with all available metrics
 ALL_METRICS = {
     'PF',
@@ -36,12 +38,14 @@ ALL_METRICS = {
     'Sharpe',
     'Best Op',
     'Worst Op',
-    'Avg Win:',
+    'Avg Win',
     'Avg Loss',
     'Backtest Time',
     'Gross Profit',
     'Gross Loss',
     'Kratio',
+    'RF',
+    'Num Ops',
 }
 # Precision to present the metrics (decimal places)
 DEC_PREC = '0.00'
@@ -117,10 +121,10 @@ class BtMetrics:
         {
             'PF': self.calculate_pf(pips_mode),
             'EP': self.esp(pips_mode),
-            'DD': self.drawdown(pips_mode),
-            'Stagnation Period': self.stagnation_periods(pips_mode),
-            'DD2': self.dd2(pips_mode),
-            'Max. Exposure': max(self.exposures()),
+            'DD': Decimal(self.drawdown(pips_mode).min()).quantize(Decimal(DEC_PREC)),
+            'Stagnation Period': max(self.stagnation_periods(pips_mode)),
+            'DD2': Decimal(self.dd2(pips_mode).min()).quantize(Decimal(DEC_PREC)),
+            'Max. Exposure': max(self.exposures()[1]),
             'Max. Losing Strike': self.get_max_losing_strike(),
             'Max. Winning Strike': self.get_max_winning_strike(),
             'Avg. Losing Strike': self.get_avg_losing_strike(),
@@ -135,12 +139,14 @@ class BtMetrics:
             'Sharpe': self.calculate_sharpe(pips_mode),
             'Best Op': self.best_operation(pips_mode),
             'Worst Op': self.worst_operation(pips_mode),
-            'Avg Win:': self.calculate_avg_win(pips_mode),
+            'Avg Win': self.calculate_avg_win(pips_mode),
             'Avg Loss': self.calculate_avg_loss(pips_mode),
             'Backtest Time': self.calculate_total_time(),
             'Gross Profit': self.gross_profit(pips_mode),
             'Gross Loss': self.gross_loss(pips_mode),
             'Kratio': self.calculate_kratio(pips_mode),
+            'RF' : self.calculate_rf(pips_mode),
+            'Num Ops': self.num_ops,
         }
         self._all_metrics = self._calculate_all_metrics(self.pips_or_money) if calc_metrics_at_init else None
 
@@ -163,6 +169,10 @@ class BtMetrics:
     @operations.setter
     def operations(self, value: pd.DataFrame) -> None:
         self._ops = value if value is pd.DataFrame else None
+        
+    @property
+    def num_ops(self) -> int:
+        return self._ops.shape[0]
 
     @property
     def pips_or_money(self) -> bool:
@@ -176,7 +186,7 @@ class BtMetrics:
     def all_metrics(self) -> dict:
         """ Property that returns a dict with the names of all the metrics and
             the corresponding values calculated."""
-        return self._all_metrics if self._all_metrics is not None else self._calculate_all_metrics(self.pips_or_money)
+        return self._all_metrics if self._all_metrics is not None else self._calculate_all_metrics()
 
     @property
     def available_metrics(self) -> Set[str]:
@@ -216,12 +226,13 @@ class BtMetrics:
         #     'Sharpe'              : self.calculate_sharpe,
         #     'Best Op'             : self.best_operation,
         #     'Worst Op'            : self.worst_operation,
-        #     'Avg Win:'            : self.calculate_avg_win,
+        #     'Avg Win'             : self.calculate_avg_win,
         #     'Avg Loss'            : self.calculate_avg_loss,
         #     'Backtest Time'       : self.calculate_total_time,             # Total time for the bactest
         #     'Gross Profit'        : self.gross_profit,
         #     'Gross Loss'          : self.gross_loss,
         #     'Kratio'              : self.calculate_kratio,
+        #     'RF'                  : self.calculate-rf,
         # }
         return ALL_METRICS
     
@@ -240,29 +251,30 @@ class BtMetrics:
         else:
             raise IndexError
 
-    def _calculate_all_metrics(self, pips_mode=True) -> dict:
+    def _calculate_all_metrics(self) -> dict:
         """Method that returns a dict with the values for the matrics included in this class
 
         Args:
-            pips_mode (bool): To determine if metrics are expressed in pips or in money
-                              Defaults to True
+            
 
         Returns:
             (dict): Dictionary with the following structure:
                     {'metric_name': metric_value }
                     For example:
                         {'PF': value,
+                         'EP': value,m
                          ...
                         }
         """
-        strikes = self._get_strikes(pips_mode)
+        pips_mode = self.pips_or_money
+        
         return {
             'PF': self.calculate_pf(pips_mode),
             'EP': self.esp(pips_mode),
-            'DD': self.drawdown(pips_mode),
-            'Stagnation Period': self.stagnation_periods(pips_mode),
-            'DD2': self.dd2(pips_mode),
-            'Max. Exposure': max(self.exposures()),
+            'DD': Decimal(self.drawdown(pips_mode).min()).quantize(Decimal(DEC_PREC)),
+            'Stagnation Period': max(self.stagnation_periods(pips_mode)),
+            'DD2': Decimal(self.dd2(pips_mode).min()).quantize(Decimal(DEC_PREC)),
+            'Max. Exposure': max(self.exposures()[1]),
             'Max. Losing Strike': self.get_max_losing_strike(),
             'Max. Winning Strike': self.get_max_winning_strike(),
             'Avg. Losing Strike': self.get_avg_losing_strike(),
@@ -277,12 +289,14 @@ class BtMetrics:
             'Sharpe': self.calculate_sharpe(pips_mode),
             'Best Op': self.best_operation(pips_mode),
             'Worst Op': self.worst_operation(pips_mode),
-            'Avg Win:': self.calculate_avg_win(pips_mode),
+            'Avg Win': self.calculate_avg_win(pips_mode),
             'Avg Loss': self.calculate_avg_loss(pips_mode),
             'Backtest Time': self.calculate_total_time(),
             'Gross Profit': self.gross_profit(pips_mode),
             'Gross Loss': self.gross_loss(pips_mode),
             'Kratio': self.calculate_kratio(pips_mode),
+            'RF': self.calculate_rf(pips_mode),
+            'Num Ops': self.num_ops,
         }
 
     def selected_metrics(self, selected_metrics: List[str]) -> dict:
@@ -317,9 +331,49 @@ class BtMetrics:
     def is_valid(self, criteria: dict) -> bool:
         """ Based on certain thresholds for some criteria determine if a 
             backtest is valid.
-            
+        
+        Args:
+            criteria (dict):    Dict of dicts with criteria to te applied to determine whether or not
+                                a set is valid. This function supposes that the criteria is incluve, i.e.,
+                                all the provided criteria must be fulfilled in order to return a True value
+                                Each dict in the set contains the min and max values
+                                for the criteria to be accepted. If any of the min or max values are not 
+                                required, INF (infinite) value is to be provided.
+                                Example:
+                                {
+                                    'PF':
+                                        {'Min': 1.3,
+                                         'Max': INF,
+                                        },
+                                    'Closing days':
+                                        {'Min': 100,
+                                         'Max': 300,
+                                        },
+                                    'kratio':
+                                        {'Min': INF,
+                                         'Max': 0.40,                                            
+                                        },
+                                        ....
+                                }
+        
+        Returns:
+            (bool): True or False            
         """
-        pass
+        if self.calc_metrics_at_init:
+            metrics = self.all_metrics
+        else:
+            metrics = {}
+            for crit in criteria:
+                metrics[crit] = self._calculate_one_metric(crit)
+        
+        res = True
+        
+        for crit in criteria:
+            val = metrics[crit] >= criteria[crit]['Min'] and \
+                 metrics[crit] <= criteria[crit]['Max']
+            res = val and res
+            
+        return res        
 
     def calculate_pf(self, pips_mode=True) -> Decimal:
         """Calculates the Profit Factor for the backtest operations
@@ -349,7 +403,23 @@ class BtMetrics:
         column = 'Pips' if pips_mode else 'Profit'
         return self.operations[column].cumsum() - \
                self.operations[column].cumsum().cummax()
-
+               
+    def max_dd(self, pips_mode=True, f:str='dd') -> Decimal:
+        """Calculates the max drawdown in absolute value
+        
+        Args:
+            pips_mode (bool): Indicates whether the results must be in Pips or in monetary terms
+            f (str): Indicates which function to use for the drawdown series
+            
+        Returns:
+            Decimal: value with the maximum drawdown                        
+        """
+        match f:
+            case 'dd':
+                return Decimal(self.drawdown(pips_mode).min()).quantize(Decimal(DEC_PREC))
+            case 'dd2':
+                return Decimal(self.dd2(pips_mode).min()).quantize(Decimal(DEC_PREC))
+       
     def stagnation_periods(self, pips_mode=True) -> List[timedelta]:
         """Calculates the periods where the balance curve is not increasing 
 
@@ -597,6 +667,12 @@ class BtMetrics:
         column = 'Pips' if pips_mode else 'Profit'
         gl = self.operations[self.operations[column] < 0][column].sum()
         return Decimal(gl).quantize(Decimal(DEC_PREC))
+    
+    def calculate_rf(self, pips_mode=True) -> Decimal:
+        column = 'Pips' if pips_mode else 'Profit'
+        max_dd = -self.max_dd(pips_mode, 'dd')
+        rf = self.gross_profit(pips_mode) / max_dd
+        return Decimal(rf).quantize(Decimal(DEC_PREC))
 
     def _eqm(self, pips_mode=True) -> Tuple[Any, Any, Any]:
         column = 'Pips' if pips_mode else 'Profit'
