@@ -1,4 +1,5 @@
 # Standard library imports
+import math
 from collections import Counter
 import datetime as dt
 from datetime import timedelta
@@ -140,6 +141,7 @@ class BtMetrics:
         TODO:   Include pips_mode as argument for the constructor in order
                 to homogenize the call to the metrics functions
         """
+        self.bt = bt
         self._ops = bt.operations
         self._available_metrics = self.available_metrics
         self.calc_metrics_at_init = calc_metrics_at_init
@@ -205,23 +207,33 @@ class BtMetrics:
     def pips_or_money(self) -> bool:
         return self._pips_or_money
     
-    @property
-    def valid(self) -> str:
-        match self.is_valid():
-            case 'True':
-                return 'Y'
-            case 'False':
-                return 'N'
-
     @pips_or_money.setter
     def pips_or_money(self, value: bool) -> None:
         self._pips_or_money = value
+    
+    @property
+    def valid(self) -> str:
+        match self.is_valid(DEFAULT_CRITERIA):
+            case True:
+                return 'Y'
+            case False:
+                return 'N'
 
     @property
     def all_metrics(self) -> dict:
         """ Property that returns a dict with the names of all the metrics and
             the corresponding values calculated."""
         return self._all_metrics if self._all_metrics is not None else self._calculate_all_metrics()
+    
+    @property
+    def ratio(self) -> Decimal:
+        if not self.calc_metrics_at_init:
+            self._calculate_all_metrics()
+            
+        avg_loss = self.calculate_avg_loss(self.pips_or_money)
+        avg_win = self.calculate_avg_win(self.pips_or_money) 
+        ratio = math.fabs(avg_win/avg_loss) if avg_loss != 0.0 else INF
+        return Decimal(ratio).quantize(Decimal(DEC_PREC))
 
     @property
     def available_metrics(self) -> Set[str]:
@@ -618,6 +630,12 @@ class BtMetrics:
 
         return days, hours, minutes, seconds
 
+    def num_winners(self, pips_mode=True) -> int:
+        """ Returns the number of winning ops
+        """
+        column = 'Pips' if pips_mode else 'Profit'
+        return int(self.operations[self.operations[column] > 0].shape[0])
+    
     def pct_win(self, pips_mode=True) -> Decimal:
         """
         pips_mode: 
@@ -732,12 +750,77 @@ class BtMetrics:
     
     def to_csv(self, filename: str, criteria: set = None) -> None:
         default_columns = [
-                self.bt.name,
-                self.bt.from_periods_to_text(self.bt.period),                
+            'NAME',
+            'PERIOD',
+            '¿VALIDA?',           
+                #self.bt.name,
+                #self.bt.from_periods_to_text(self.bt.period),                
             ]
+        default_values = [
+            self.bt.name,
+            self.bt.from_period_to_text(self.bt.period),
+            self.valid,
+        ]
         if criteria is None:
             columns = [
-                self.valid,
-                
+            'PIPS',
+            'kratio',
+            'SQN',
+            'EP',
+            'DD',
+            'RF',
+            '# Ops',
+            'Win Ops',
+            '% w',
+            'Mejor Op',
+            'Peor Op',
+            'Max. Ganancia consecutiva',
+            'Max. Perdida consecutiva',
+            'Max. Exposición Mercado',
+            'Pérdida Media',
+            'Ganancia Media',
+            'Ratio',
+            'Días',
+            '% tiempo mercado',
+            'Tiempo medio op.',
+            #'Op más larga',
+            #'Op más corta',                
             ]
+            days, hours, minutes, seconds = self.calculate_time_in_market()
+            op_promedio = self.bt.operations.Duration.sum() / self.bt.operations.shape[0]
+            avg_days = op_promedio.days
+            avg_hours = (op_promedio - dt.timedelta(days=avg_days)).seconds // 3600
+            avg_minutes = (op_promedio - dt.timedelta(days=avg_days, hours=avg_hours)).seconds//60
+            values = [
+                self.gross_profit(self.pips_or_money),
+                self.calculate_kratio(self.pips_or_money),
+                self.calculate_sqn(self.pips_or_money),
+                self.esp(self.pips_or_money),
+                Decimal(self.drawdown(self.pips_or_money).min()).quantize(Decimal(DEC_PREC)),
+                self.calculate_rf(self.pips_or_money),
+                self.num_ops,                
+                self.num_winners(self.pips_or_money),
+                self.pct_win(self.pips_or_money),
+                self.best_operation(self.pips_or_money)[0],
+                self.worst_operation(self.pips_or_money)[0],
+                self.get_max_winning_strike(self.pips_or_money),
+                self.get_max_losing_strike(self.pips_or_money),
+                max(self.exposures()[1]),
+                self.calculate_avg_loss(self.pips_or_money),
+                self.calculate_avg_win(self.pips_or_money),                
+                self.ratio,
+                self.calculate_closing_days(),
+                Decimal(dt.timedelta(days=days, hours=hours, minutes=minutes) / \
+                    self.calculate_total_time() * 100).quantize(Decimal(DEC_PREC)),
+                dt.timedelta(days=avg_days, hours=avg_hours, minutes=avg_minutes),
+            ]
+        else:
+            columns = criteria
+            values = [self._calculate_one_metric[column] for column in criteria]
+            
+        # Join columsn to default_columns
+        all_columns = default_columns + columns
+        all_values = [default_values + values]        
+        df = pd.DataFrame(data=all_values, columns=all_columns)
+        df.to_csv(filename, index=False, decimal=',')        
             

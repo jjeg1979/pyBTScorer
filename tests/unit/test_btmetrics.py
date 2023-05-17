@@ -29,7 +29,7 @@ from src.parser.btmetrics import (
 )
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope='module')
 def mt():
     bt = BtGenbox(Path(r'src/payload'), BT_FILES[0])
     return BtMetrics(bt, calc_metrics_at_init=False, pips_mode=True)
@@ -121,6 +121,38 @@ class TestBtmetricsAddMetricsFeatures:
     def test_btmetrics_is_valid_correctly_classifies_backtest(self, mt):        
         assert mt.is_valid(DEFAULT_CRITERIA) == False
         
+    def test_btmetrics_valid_property_returns_correct_string(self, mt):
+        assert mt.valid == 'N'
+    
+    @pytest.mark.ratio    
+    def test_btmetrics_ratio_property_returns_a_Decimal(self, mt):
+        mt.pips_or_money = True
+        assert isinstance(mt.ratio, Decimal)
+        mt.pips_or_money = False
+        assert isinstance(mt.ratio, Decimal)
+    
+    @pytest.mark.ratio     
+    def test_btmetrics_ratio_returns_correct_value(self, mt):
+        mt.pips_or_money = True
+        assert mt.ratio == Decimal(2.00).quantize(Decimal(DEC_PREC))
+        mt.pips_or_money = False
+        assert mt.ratio == Decimal(1.95).quantize(Decimal(DEC_PREC))
+        
+    def test_btmetrics_win_ops_returns_an_int(self, mt):
+        assert isinstance(mt.num_winners(pips_mode=True), int)
+        assert isinstance(mt.num_winners(pips_mode=False), int)
+        
+    def test_btmetrics_win_ops_returns_correct_value(self, mt):
+        assert mt.num_winners(pips_mode=True) == 161
+        assert mt.num_winners(pips_mode=False) == 159
+     
+    @pytest.mark.xfail(__version__ < '0.2.0', reason='Bug to be considered')    
+    def test_btmetrics_win_ops_returns_consistent_value(self, mt):
+        assert mt.num_winners(pips_mode=True) == mt.num_winners(pips_mode=False)
+    
+    @pytest.mark.exporttofile    
+    def test_btmetrics_to_csv_method_creates_csv_file(self, mt):
+        mt.to_csv('test.csv')
 
 @pytest.mark.metricsvalues
 class TestBtMetricsCalculations:

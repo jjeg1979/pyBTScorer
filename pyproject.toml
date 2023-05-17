@@ -20,4 +20,5 @@ markers = [
     "addedmetricsfeatures",
     "justonemetric",
     "exporttofile",
+    "ratio",
 ]
