@@ -151,8 +151,13 @@ class TestBtmetricsAddMetricsFeatures:
         assert mt.num_winners(pips_mode=True) == mt.num_winners(pips_mode=False)
     
     @pytest.mark.exporttofile    
-    def test_btmetrics_to_csv_method_creates_csv_file(self, mt):
-        mt.to_csv('test.csv')
+    def test_btmetrics_metrics_to_df_method_returns_a_DataFrame(self, mt):
+        assert isinstance(mt.metrics_to_df(), pd.DataFrame)
+        
+    @pytest.mark.exporttofile    
+    def test_btmetrics_metrics_to_df_method_returns_correct_column(self, mt):
+        df = mt.metrics_to_df(export_to_csv=False)
+        assert df.shape[1] == 23
 
 @pytest.mark.metricsvalues
 class TestBtMetricsCalculations:

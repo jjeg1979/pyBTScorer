@@ -748,7 +748,8 @@ class BtMetrics:
         kr = model.coef_[0] / (error * len(x))
         return Decimal(kr).quantize(Decimal(DEC_PREC))   
     
-    def to_csv(self, filename: str, criteria: set = None) -> None:
+    def metrics_to_df(self, criteria: set = None, export_to_csv: bool = False) -> None:
+        filename = 'metrics.csv'
         default_columns = [
             'NAME',
             'PERIOD',
@@ -822,5 +823,8 @@ class BtMetrics:
         all_columns = default_columns + columns
         all_values = [default_values + values]        
         df = pd.DataFrame(data=all_values, columns=all_columns)
-        df.to_csv(filename, index=False, decimal=',')        
+        self.df_metrics = df
+        if export_to_csv:
+            df.to_csv(filename, index=False, decimal=',')
+        return df
             
