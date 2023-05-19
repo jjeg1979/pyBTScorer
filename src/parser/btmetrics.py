@@ -784,8 +784,8 @@ class BtMetrics:
             'Días',
             '% tiempo mercado',
             'Tiempo medio op.',
-            #'Op más larga',
-            #'Op más corta',                
+            'Op más larga',
+            'Op más corta',                
             ]
             days, hours, minutes, seconds = self.calculate_time_in_market()
             op_promedio = self.bt.operations.Duration.sum() / self.bt.operations.shape[0]
@@ -814,6 +814,8 @@ class BtMetrics:
                 Decimal(dt.timedelta(days=days, hours=hours, minutes=minutes) / \
                     self.calculate_total_time() * 100).quantize(Decimal(DEC_PREC)),
                 dt.timedelta(days=avg_days, hours=avg_hours, minutes=avg_minutes),
+                self.operations.Duration.max(),
+                self.operations.Duration.min(),
             ]
         else:
             columns = criteria

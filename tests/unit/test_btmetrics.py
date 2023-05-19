@@ -157,7 +157,7 @@ class TestBtmetricsAddMetricsFeatures:
     @pytest.mark.exporttofile    
     def test_btmetrics_metrics_to_df_method_returns_correct_column(self, mt):
         df = mt.metrics_to_df(export_to_csv=False)
-        assert df.shape[1] == 23
+        assert df.shape[1] == 25
 
 @pytest.mark.metricsvalues
 class TestBtMetricsCalculations:
@@ -603,5 +603,3 @@ class TestBtMetricsCalculations:
     @pytest.mark.xfail(reason='Known bug, but unknown reason with calculations in monetary terms')
     def test_btmetrics_gross_loss_in_money_returns_correct_value(self, mt):
         assert mt.gross_loss(pips_mode=True) == Decimal(-460.00).quantize(Decimal(DEC_PREC))
-
-

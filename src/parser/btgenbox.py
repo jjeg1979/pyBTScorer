@@ -238,7 +238,7 @@ class BtGenbox(BtParser):
             One of the values from BtPeriods enumeration
         """
 
-        # For Genbox-generated BTs, the fields are separated with _
+        # For Genbox-generated BTs, the fields are separated with field_sep
         period = self.file.split(EXTENSION_SEP)[0].split(field_sep)[-1]
         match period:
             case 'IS':
