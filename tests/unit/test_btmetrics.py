@@ -604,7 +604,4 @@ class TestBtMetricsCalculations:
     def test_btmetrics_gross_loss_in_money_returns_correct_value(self, mt):
         assert mt.gross_loss(pips_mode=True) == Decimal(-460.00).quantize(Decimal(DEC_PREC))
 
-@pytest.mark.exporttofile
-class TestBtmetricsExportMetrics:
-    """Tests the export capabilities of the metrics class"""
-    pass
+

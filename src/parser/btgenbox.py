@@ -153,7 +153,11 @@ class BtGenbox(BtParser):
             This information is used later to get the metrics
         """
 
-        raw_data = pd.read_html(Path(self.path/self.file))
+        if self.path == '.':
+            raw_data = pd.read_html(Path(self.file))
+        else:
+            raw_data = pd.read_html(Path(self.path / self.file))
+
         # Read operations
         ops = raw_data[0].iloc[2:, :]
 
